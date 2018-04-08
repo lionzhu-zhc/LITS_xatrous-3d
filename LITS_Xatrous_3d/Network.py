@@ -312,7 +312,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
 def conv_layer(kernel_size, in_put, in_channel, out_channel, c_stride = 1, c_rate = 1, name = None):
     with tf.variable_scope(name):
         conv_weights, conv_bias = get_var(kernel_size, in_channel, out_channel, name)
-        conv = tf.nn.conv3d(in_put, conv_weights, strides= [1, c_stride, c_stride, c_stride, 1], padding= 'SAME', dilations= [1, 1, c_rate, c_rate, 1])
+        conv = tf.nn.conv3d(in_put, conv_weights, strides= [1, c_stride, c_stride, c_stride, 1], padding= 'SAME', dilations= [1, c_rate, c_rate, c_rate, 1])
         conv_addbias = tf.nn.bias_add(conv, conv_bias)
         return conv_addbias
 
