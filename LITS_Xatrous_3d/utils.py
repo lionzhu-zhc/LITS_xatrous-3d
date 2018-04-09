@@ -85,3 +85,8 @@ def save_imgs(resultPath, name_pre, label_batch, pred_batch, IMAGE_DEPTH, IMAGE_
             resultPath + 'imgs/' + name_pre + '-%d-mask.png' % dept)
         smc.toimage(pred_img_mat, cmin=0.0, cmax=255).save(
             resultPath + 'imgs/' + name_pre + '-%d-pred.png' % dept)
+
+
+def save_npys(resultPath, name_pre, label_batch, pred_batch):
+    np.save(resultPath + 'npys/' + name_pre + '-mask.npy', label_batch)
+    np.save(resultPath + 'npys/' + name_pre + '-pred.npy', pred_batch)

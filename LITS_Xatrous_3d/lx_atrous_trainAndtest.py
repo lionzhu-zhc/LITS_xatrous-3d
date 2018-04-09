@@ -12,7 +12,7 @@ import numpy as np
 
 trainPath = 'E:/Lianxin_LITS/lxData_rs_600_cut_280/train_cutslice_npy/'
 testPath = 'E:/Lianxin_LITS/lxData_rs_600_cut_280/test_npy/'
-resultPath = 'D:/LITS_Rst/LITS_280_lx_atrous/exp1/'
+resultPath = 'D:/LITS_Rst/LITS_280_lx_atrous/exp2/'
 
 IMAGE_WIDTH = 280
 IMAGE_HEIGHT = 280
@@ -23,10 +23,10 @@ MAX_ITERATION = 30000
 CLASSNUM = 3
 
 
-def training(loss_val, va_list):
+def training(lr, loss_val, va_list):
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    optimizer = tf.train.AdamOptimizer(LEARNING_RATE)
-    print ('lr:',LEARNING_RATE)
+    optimizer = tf.train.AdamOptimizer(lr)
+    print ('lr:',lr)
     with tf.control_dependencies(update_ops):
         grads = optimizer.compute_gradients(loss_val, var_list=va_list)
         return optimizer.apply_gradients(grads)
@@ -50,8 +50,9 @@ def FCNX_run():
             logits=logits, labels=tf.squeeze(annotation, squeeze_dims=[4]), weights=current_weight))
         tf.summary.scalar('loss', loss)
 
+    LRate = tf.placeholder(tf.float32)
     trainable_vars = tf.trainable_variables()
-    train_op = training(loss, trainable_vars)
+    train_op = training(LRate, loss, trainable_vars)
 
     with tf.variable_scope('fcnx') as scope:
         config = tf.ConfigProto()
@@ -69,13 +70,13 @@ def FCNX_run():
 
             global LEARNING_RATE
             if (itr + 1) % 1000 == 0:
-                LEARNING_RATE = LEARNING_RATE * 0.95
+                LEARNING_RATE = LEARNING_RATE * 0.90
                 print(LEARNING_RATE)
 
-            # LEARNING_RATE = LEARNING_RATE_INIT * math.pow((1 - itr/ MAX_ITERATION), 0.9)
+            # lr = LEARNING_RATE * math.pow((1 - itr/ MAX_ITERATION), 0.9)
             # print(LEARNING_RATE)
 
-            feed = {image: vol_batch, annotation: seg_batch, bn_flag: True, train_batchsize: 1}
+            feed = {LRate: LEARNING_RATE, image: vol_batch, annotation: seg_batch, bn_flag: True, train_batchsize: 1}
             sess.run(train_op, feed_dict= feed)
             train_loss_print, summary_str = sess.run([loss, merge_op], feed_dict=feed)
             print(itr, vol_batch.shape)
@@ -83,7 +84,7 @@ def FCNX_run():
             writer.add_summary(summary_str, itr)
 
             if (itr + 1) % 10000 == 0:
-                saver.save(sess, resultPath + 'netCKPT/modle', global_step= (itr+1) )
+                saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1) )
 
 ##############################Test Test Test Test#########################################################################################
             if itr == (MAX_ITERATION - 1):
@@ -100,6 +101,7 @@ def FCNX_run():
                     namePre = tDir[:-4]
                     print("test_itr:", namePre)
                     utils.save_imgs(resultPath, namePre, label_tosave, pred_tosave, IMAGE_DEPTH, IMAGE_WIDTH, IMAGE_HEIGHT)
+                    utils.save_npys(resultPath, namePre, label_tosave, pred_tosave)
 
 
 
