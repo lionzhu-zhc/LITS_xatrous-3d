@@ -1,10 +1,13 @@
 '''
 Lionzhu 0407
-training and test lianxin data
+training and test lianxin data, use Network.py pspnet
+
+0414
+lianxin, use NetDeepLab deeplab+FCN
 '''
 
 import tensorflow as tf
-import Network
+import NetDeepLab
 import utils
 import math
 import os
@@ -12,7 +15,9 @@ import numpy as np
 
 trainPath = 'E:/Lianxin_LITS/lxData_rs_600_cut_280/train_cutslice_npy/'
 testPath = 'E:/Lianxin_LITS/lxData_rs_600_cut_280/test_npy/'
-resultPath = 'D:/LITS_Rst/LITS_280_lx_atrous/exp2/'
+
+#change dir here .........................................
+resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp1/'
 
 IMAGE_WIDTH = 280
 IMAGE_HEIGHT = 280
@@ -40,19 +45,20 @@ def FCNX_run():
 
     bn_flag = tf.placeholder(tf.bool)
     train_batchsize = tf.placeholder(tf.int32)
-    pred_annot, logits = Network.build_LITS_Xatrous_3d(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
-                                                       IMAGE_DEPTH= IMAGE_DEPTH, IMAGE_HEIGHT = IMAGE_HEIGHT, IMAGE_WIDTH= IMAGE_WIDTH, CLASSNUM= CLASSNUM)
+    pred_annot, logits = NetDeepLab.LITS_DLab(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
+                                            IMAGE_DEPTH= IMAGE_DEPTH, IMAGE_HEIGHT = IMAGE_HEIGHT, IMAGE_WIDTH= IMAGE_WIDTH, CLASSNUM= CLASSNUM)
 
     with tf.name_scope('loss'):
-        class_weight = tf.constant([0.2, 1, 25])
+        class_weight = tf.constant([0.15, 1, 25])
         current_weight = tf.gather(class_weight, tf.squeeze(annotation, axis=4))
         loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
             logits=logits, labels=tf.squeeze(annotation, squeeze_dims=[4]), weights=current_weight))
         tf.summary.scalar('loss', loss)
 
-    LRate = tf.placeholder(tf.float32)
-    trainable_vars = tf.trainable_variables()
-    train_op = training(LRate, loss, trainable_vars)
+    with tf.name_scope('trainOP'):
+        LRate = tf.placeholder(tf.float32)
+        trainable_vars = tf.trainable_variables()
+        train_op = training(LRate, loss, trainable_vars)
 
     with tf.variable_scope('fcnx') as scope:
         config = tf.ConfigProto()

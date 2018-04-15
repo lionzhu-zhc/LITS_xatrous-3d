@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-npy_path = 'D:/LITS_Rst/LITS_280_lx_atrous/exp2/npys/'
+npy_path = 'D:/LITS_Rst/LITS_280_lx_atrous/exp4/npys/'
 file_names = os.listdir(npy_path)
 npy_num = len(file_names)
 
@@ -22,4 +22,4 @@ for img_i in range(0, npy_num, 2):
 liver_dice_coe = 2*liver_labPred/(liver_label + liver_pred)
 print("liver_dice:", liver_dice_coe)
 with open('FCNX_atrous.txt', 'a+') as resltFile:
-	resltFile.write("liver_dice:  %.3f \n" %(liver_dice_coe))
+	resltFile.write("exp4_liver_dice:  %.3f \n" %(liver_dice_coe))

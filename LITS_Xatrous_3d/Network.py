@@ -12,7 +12,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
 
     with tf.variable_scope('st1_un1'):
         conv_res = conv_layer(kernel_size=3, in_put= tensor_in, in_channel= 1,
-                              out_channel= 64, c_stride= 2, c_rate=2, name='Conv')
+                              out_channel= 64, c_stride= 2, c_rate=3, name='Conv')
         bn_res =  tf.layers.batch_normalization(conv_res, momentum= 0.9, training= BN_FLAG, name= 'BN')
         s1u1_res = tf.nn.relu(bn_res)
 
@@ -22,7 +22,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s1u2a1_res = tf.nn.relu(bn_res)
 
     with tf.variable_scope('st1_un2_a2'):
-        conv_res = conv_layer(kernel_size= 3, in_put= s1u2a1_res, in_channel= 32, out_channel= 32, c_rate= 2, name= 'Conv')
+        conv_res = conv_layer(kernel_size= 3, in_put= s1u2a1_res, in_channel= 32, out_channel= 32, c_rate= 3, name= 'Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum= 0.9, training= BN_FLAG, name = 'BN')
         s1u1a2_res = tf.nn.relu(bn_res)
 
@@ -40,7 +40,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s1u3a1_res = tf.nn.relu(bn_res)
 
     with tf.variable_scope('st1_un3_a2'):
-        conv_res = conv_layer(kernel_size= 3, in_put=s1u3a1_res, in_channel=32, out_channel= 32, c_rate= 2, name= 'Conv')
+        conv_res = conv_layer(kernel_size= 3, in_put=s1u3a1_res, in_channel=32, out_channel= 32, c_rate= 3, name= 'Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BN')
         s1u3a2_res = tf.nn.relu(bn_res)
 
@@ -58,7 +58,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s1u4a1_res = tf.nn.relu(bn_res)
 
     with tf.variable_scope('st1_un4_a2'):
-        conv_res = conv_layer(kernel_size= 3, in_put= s1u4a1_res, in_channel=32, out_channel= 32, c_rate=2, name= 'Conv')
+        conv_res = conv_layer(kernel_size= 3, in_put= s1u4a1_res, in_channel=32, out_channel= 32, c_rate=3, name= 'Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BN')
         s1u4a2_res = tf.nn.relu(bn_res)
 
@@ -76,7 +76,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s2u1a1_res = tf.nn.relu(bn_res)
 
     with tf.variable_scope('st2_un1_a2'):
-        conv_res = conv_layer(kernel_size= 3, in_put=s2u1a1_res, in_channel= 128, out_channel=128, c_stride= 2,c_rate= 2, name= 'Conv')
+        conv_res = conv_layer(kernel_size= 3, in_put=s2u1a1_res, in_channel= 128, out_channel=128, c_stride= 2,c_rate= 3, name= 'Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BN')
         s2u1a2_res = tf.nn.relu(bn_res)
 
@@ -99,7 +99,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s2u2a1_res = tf.nn.relu(bn_res)
 
     with tf.variable_scope('st2_un2_a2'):
-        conv_res = conv_layer(kernel_size=3, in_put=s2u2a1_res, in_channel=128, out_channel=128, c_rate= 2, name='Conv')
+        conv_res = conv_layer(kernel_size=3, in_put=s2u2a1_res, in_channel=128, out_channel=128, c_rate= 3, name='Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s2u2a2_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st2_un2_a3'):
@@ -117,7 +117,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s2u3a1_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st2_un3_a2'):
         conv_res = conv_layer(kernel_size=3, in_put=s2u3a1_res, in_channel=128,
-                                   out_channel=128, c_rate= 2, name='Conv')
+                                   out_channel=128, c_rate= 3, name='Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s2u3a2_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st2_un3_a3'):
@@ -135,7 +135,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s2u4a1_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st2_un4_a2'):
         conv_res = conv_layer(kernel_size=3, in_put=s2u4a1_res, in_channel=128,
-                                   out_channel=128, c_rate= 2, name='Conv')
+                                   out_channel=128, c_rate= 3, name='Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s2u4a2_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st2_un4_a3'):
@@ -153,7 +153,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s2u5a1_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st2_un5_a2'):
         conv_res = conv_layer(kernel_size=3, in_put=s2u5a1_res, in_channel=128,
-                                   out_channel=128, c_rate = 2, name='Conv')
+                                   out_channel=128, c_rate = 3, name='Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s2u5a2_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st2_un5_a3'):
@@ -169,7 +169,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s2u6br1_pool = max_pool3d(s2u5_sum, ksize=2, stride=2)
     with tf.variable_scope('s2u6_br1_conv'):
         conv_res = conv_layer(kernel_size=3, in_put=s2u6br1_pool, in_channel=256,
-                                   out_channel=128, c_rate= 2, name='Conv')
+                                   out_channel=128, c_rate= 3, name='Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s2u6br1_conv = tf.nn.relu(bn_res)
     with tf.variable_scope('s2u6_br1_deconv'):
@@ -182,7 +182,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s2u6br2_pool = max_pool3d(s2u5_sum, ksize=4, stride=4)
     with tf.variable_scope('s2u6_br2_conv'):
         conv_res = conv_layer(kernel_size=3, in_put=s2u6br2_pool, in_channel=256,
-                                   out_channel=128, c_rate= 2, name='Conv')
+                                   out_channel=128, c_rate= 3, name='Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s2u6br2_conv = tf.nn.relu(bn_res)
     with tf.variable_scope('s2u6_br2_deconv'):
@@ -195,7 +195,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s2u6br3_pool = max_pool3d(s2u5_sum, ksize=8, stride=8)
     with tf.variable_scope('s2u6_br3_conv'):
         conv_res = conv_layer(kernel_size=3, in_put=s2u6br3_pool, in_channel=256,
-                                   out_channel=128, c_rate= 2, name='Conv')
+                                   out_channel=128, c_rate= 3, name='Conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s2u6br3_conv = tf.nn.relu(bn_res)
     with tf.variable_scope('s2u6_br3_deconv'):
@@ -210,7 +210,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
 
     with tf.variable_scope('st3_un1'):
         conv_res = conv_layer(kernel_size=3, in_put=s2u6_concat, in_channel=1024,
-                                   out_channel=128, c_rate= 2, name='conv')
+                                   out_channel=128, c_rate= 3, name='conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s3u1_res = tf.nn.relu(bn_res)  # channel 128
 
@@ -221,7 +221,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s3u1a1_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st3_un1_a2'):
         conv_res = conv_layer(kernel_size=3, in_put=s3u1a1_res, in_channel=64,
-                                   out_channel=64, c_rate= 2, name='conv')
+                                   out_channel=64, c_rate= 3, name='conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s3u1a2_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st3_un1_a3'):
@@ -244,7 +244,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s3u2a1_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st3_un2_a2'):
         conv_res = conv_layer(kernel_size=3, in_put=s3u2a1_res, in_channel=64,
-                                   out_channel=64, c_rate= 2, name='conv')
+                                   out_channel=64, c_rate= 3, name='conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s3u2a2_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st3_un2_a3'):
@@ -262,7 +262,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s3u3a1_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st3_un3_a2'):
         conv_res = conv_layer(kernel_size=3, in_put=s3u3a1_res, in_channel=64,
-                                   out_channel=64, c_rate= 2, name='conv')
+                                   out_channel=64, c_rate= 3, name='conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s3u3a2_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st3_un3_a3'):
@@ -280,7 +280,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
         s3u4a1_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st3_un4_a2'):
         conv_res = conv_layer(kernel_size=3, in_put=s3u4a1_res, in_channel=64,
-                                   out_channel=64, c_rate= 2, name='conv')
+                                   out_channel=64, c_rate= 3, name='conv')
         bn_res = tf.layers.batch_normalization(conv_res, momentum=0.9, training=BN_FLAG, name='BatchNorm')
         s3u4a2_res = tf.nn.relu(bn_res)
     with tf.variable_scope('st3_un4_a3'):
@@ -312,7 +312,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
 def conv_layer(kernel_size, in_put, in_channel, out_channel, c_stride = 1, c_rate = 1, name = None):
     with tf.variable_scope(name):
         conv_weights, conv_bias = get_var(kernel_size, in_channel, out_channel, name)
-        conv = tf.nn.conv3d(in_put, conv_weights, strides= [1, c_stride, c_stride, c_stride, 1], padding= 'SAME', dilations= [1, c_rate, c_rate, c_rate, 1])
+        conv = tf.nn.conv3d(in_put, conv_weights, strides= [1, c_stride, c_stride, c_stride, 1], padding= 'SAME', dilations= [1, 1, c_rate, c_rate, 1])
         conv_addbias = tf.nn.bias_add(conv, conv_bias)
         return conv_addbias
 

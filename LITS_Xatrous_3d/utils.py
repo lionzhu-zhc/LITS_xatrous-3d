@@ -40,6 +40,12 @@ def get_data_test(testPath, tDir):
 
 
 def save_imgs(resultPath, name_pre, label_batch, pred_batch, IMAGE_DEPTH, IMAGE_WIDTH, IMAGE_HEIGHT):
+    str_split = name_pre.split('-')
+    if not(os.path.exists(resultPath + 'imgs/' + str_split[0])):
+        os.makedirs(resultPath + 'imgs/' + str_split[0])
+
+    file_index = int(str_split[-1]) * IMAGE_DEPTH
+
     for dept in range(IMAGE_DEPTH):
         label_img_mat = np.zeros((3, IMAGE_WIDTH, IMAGE_HEIGHT))
         pred_img_mat = np.zeros((3, IMAGE_WIDTH, IMAGE_HEIGHT))
@@ -82,9 +88,9 @@ def save_imgs(resultPath, name_pre, label_batch, pred_batch, IMAGE_DEPTH, IMAGE_
 
         # change dir here ..........................................................................................
         smc.toimage(label_img_mat, cmin=0.0, cmax=255).save(
-            resultPath + 'imgs/' + name_pre + '-%d-mask.png' % dept)
+            resultPath + 'imgs/' + str_split[0] + '/%d-mask.png' % (file_index + dept))
         smc.toimage(pred_img_mat, cmin=0.0, cmax=255).save(
-            resultPath + 'imgs/' + name_pre + '-%d-pred.png' % dept)
+            resultPath + 'imgs/' + str_split[0] + '/%d-pred.png' % (file_index + dept))
 
 
 def save_npys(resultPath, name_pre, label_batch, pred_batch):
