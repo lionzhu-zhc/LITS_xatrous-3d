@@ -6,12 +6,14 @@ training and test lianxin data, use Network.py pspnet
 lianxin, use NetDeepLab deeplab+FCN
 '''
 
-import tensorflow as tf
 import NetDeepLab_V2
 import utils
-import Loss
+import LossPy
 import os
+import tensorflow as tf
 import numpy as np
+import datetime
+
 
 trainPath = 'E:/Lianxin_LITS/lxData_rs_600_cut_280/train_cutslice_npy/'
 testPath = 'E:/Lianxin_LITS/lxData_rs_600_cut_280/test_npy/'
@@ -25,14 +27,13 @@ IMAGE_DEPTH = 24
 
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
-MAX_ITERATION = 10000
+MAX_ITERATION = 20
 CLASSNUM = 2
 
 
 def training(lr, loss_val, va_list):
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     optimizer = tf.train.AdamOptimizer(lr)
-    print ('lr:',lr)
     with tf.control_dependencies(update_ops):
         grads = optimizer.compute_gradients(loss_val, var_list=va_list)
         return optimizer.apply_gradients(grads)
@@ -50,13 +51,11 @@ def FCNX_run():
 
     with tf.name_scope('loss'):
         # class_weight = tf.constant([0.15, 1, 25])
-        # current_weight = tf.gather(class_weight, tf.squeeze(annotation, axis=4))
-        # loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
-        #     logits=logits, labels=tf.squeeze(annotation, squeeze_dims=[4]), weights=current_weight))
+        #loss = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         #
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
-        loss_reduce = Loss.dice(pred = logits, ground_truth= annotation)
+        loss_reduce = LossPy.dice(pred = logits, ground_truth= annotation)
         tf.summary.scalar('loss', loss_reduce)
 
     with tf.name_scope('trainOP'):
@@ -72,6 +71,8 @@ def FCNX_run():
         config.gpu_options.allow_growth = True
 
         sess = tf.Session(config = config)
+        print('Begin training:{}'.format(datetime.datetime.now()))
+
         merge_op = tf.summary.merge_all()
         writer = tf.summary.FileWriter(resultPath + '/log', sess.graph)
         sess.run(tf.global_variables_initializer())
@@ -99,8 +100,9 @@ def FCNX_run():
             if (itr + 1) % 10000 == 0:
                 saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1) )
 
-##############################Test Test Test Test#########################################################################################
+#-------------------------------------Test Test Test Test-------------------------------------------------------------------------------
             if itr == (MAX_ITERATION - 1):
+                print('End training:{}'.format(datetime.datetime.now()))
                 test_dirs = os.listdir(testPath + '/vol/')
                 for tDir in test_dirs:
                     vol_batch, seg_batch = utils.get_data_test(testPath, tDir)

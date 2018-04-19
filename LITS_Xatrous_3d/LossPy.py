@@ -35,3 +35,13 @@ def dice(pred, ground_truth, weight_map = None):
 
     dice_coe = dice_numerator / (dice_denominator + smooth)
     return 1-tf.reduce_mean(dice_coe)
+
+
+def cross_entropy_loss(pred, ground_truth, class_weight = None):
+    if class_weight is not None:
+        current_weight= tf.gather(class_weight, tf.squeeze(ground_truth, axis=4))
+        loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
+                logits=pred, labels=tf.squeeze(ground_truth, squeeze_dims=[4]), weights=current_weight))
+
+    return  loss
+
