@@ -7,25 +7,26 @@ lianxin, use NetDeepLab deeplab+FCN
 '''
 
 import tensorflow as tf
-import NetDeepLab
+import NetDeepLab_V2
 import utils
-import math
+import Loss
 import os
 import numpy as np
 
 trainPath = 'E:/Lianxin_LITS/lxData_rs_600_cut_280/train_cutslice_npy/'
 testPath = 'E:/Lianxin_LITS/lxData_rs_600_cut_280/test_npy/'
 
-#change dir here .........................................
-resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp1/'
+#change dir here ..............................................................
+resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp5/'
 
 IMAGE_WIDTH = 280
 IMAGE_HEIGHT = 280
 IMAGE_DEPTH = 24
 
 LEARNING_RATE = 1e-4
-MAX_ITERATION = 30000
-CLASSNUM = 3
+WEIGHT_DECAY = 1e-4
+MAX_ITERATION = 10000
+CLASSNUM = 2
 
 
 def training(lr, loss_val, va_list):
@@ -36,8 +37,6 @@ def training(lr, loss_val, va_list):
         grads = optimizer.compute_gradients(loss_val, var_list=va_list)
         return optimizer.apply_gradients(grads)
 
-
-
 def FCNX_run():
     with tf.name_scope('inputs'):
         annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_DEPTH, IMAGE_HEIGHT, IMAGE_WIDTH, 1], name='annotation')
@@ -45,20 +44,28 @@ def FCNX_run():
 
     bn_flag = tf.placeholder(tf.bool)
     train_batchsize = tf.placeholder(tf.int32)
-    pred_annot, logits = NetDeepLab.LITS_DLab(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
+    pred_annot, logits = NetDeepLab_V2.LITS_DLab(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
                                             IMAGE_DEPTH= IMAGE_DEPTH, IMAGE_HEIGHT = IMAGE_HEIGHT, IMAGE_WIDTH= IMAGE_WIDTH, CLASSNUM= CLASSNUM)
 
+
     with tf.name_scope('loss'):
-        class_weight = tf.constant([0.15, 1, 25])
-        current_weight = tf.gather(class_weight, tf.squeeze(annotation, axis=4))
-        loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
-            logits=logits, labels=tf.squeeze(annotation, squeeze_dims=[4]), weights=current_weight))
-        tf.summary.scalar('loss', loss)
+        # class_weight = tf.constant([0.15, 1, 25])
+        # current_weight = tf.gather(class_weight, tf.squeeze(annotation, axis=4))
+        # loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
+        #     logits=logits, labels=tf.squeeze(annotation, squeeze_dims=[4]), weights=current_weight))
+        #
+        # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
+        # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
+        loss_reduce = Loss.dice(pred = logits, ground_truth= annotation)
+        tf.summary.scalar('loss', loss_reduce)
 
     with tf.name_scope('trainOP'):
         LRate = tf.placeholder(tf.float32)
         trainable_vars = tf.trainable_variables()
-        train_op = training(LRate, loss, trainable_vars)
+        # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        # with tf.control_dependencies(update_ops):
+        #     train_op = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss_reduce)
+        train_op = training(LRate, loss_reduce, trainable_vars)
 
     with tf.variable_scope('fcnx') as scope:
         config = tf.ConfigProto()
@@ -84,7 +91,7 @@ def FCNX_run():
 
             feed = {LRate: LEARNING_RATE, image: vol_batch, annotation: seg_batch, bn_flag: True, train_batchsize: 1}
             sess.run(train_op, feed_dict= feed)
-            train_loss_print, summary_str = sess.run([loss, merge_op], feed_dict=feed)
+            train_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=feed)
             print(itr, vol_batch.shape)
             print('loss:', train_loss_print)
             writer.add_summary(summary_str, itr)

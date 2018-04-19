@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import tensorflow as tf
 import os
 import scipy.misc as smc
 
@@ -86,7 +87,7 @@ def save_imgs(resultPath, name_pre, label_batch, pred_batch, IMAGE_DEPTH, IMAGE_
 
         pred_img_mat = np.transpose(pred_img_mat, [1, 2, 0])
 
-        # change dir here ..........................................................................................
+
         smc.toimage(label_img_mat, cmin=0.0, cmax=255).save(
             resultPath + 'imgs/' + str_split[0] + '/%d-mask.png' % (file_index + dept))
         smc.toimage(pred_img_mat, cmin=0.0, cmax=255).save(
@@ -96,3 +97,30 @@ def save_imgs(resultPath, name_pre, label_batch, pred_batch, IMAGE_DEPTH, IMAGE_
 def save_npys(resultPath, name_pre, label_batch, pred_batch):
     np.save(resultPath + 'npys/' + name_pre + '-mask.npy', label_batch)
     np.save(resultPath + 'npys/' + name_pre + '-pred.npy', pred_batch)
+
+def labels_to_onehot(lables, class_num = 1):
+    '''
+    :param lables:  shape [batchsize, depth, height, width], 4D, no channel axis
+    :param class_num:
+    :return:
+    '''
+
+    if isinstance(class_num, tf.Tensor):
+        class_num_tf = tf.to_int32(class_num)
+    else:
+        class_num_tf = tf.constant(class_num, tf.int32)
+    in_shape = tf.shape(lables)
+    out_shape = tf.concat([in_shape, tf.reshape(class_num_tf, (1,))], 0) # add a extra axis for classNum, 5D
+
+    if class_num == 1:
+        return tf.reshape(lables, out_shape)
+    else:
+        lables = tf.reshape(lables, (-1,)) # squeeze labels to one row x N cols vector [0,0,0,1,......]
+        dense_shape = tf.stack([tf.shape(lables)[0], class_num_tf], 0)   # denshape [N cols , classNum]
+
+        lables = tf.to_int64(lables)
+        ids = tf.range(tf.to_int64(dense_shape[0]), dtype= tf.int64)  # ids is a 1xN vector as[0,1,2,3...., N-1]
+        ids = tf.stack([ids, lables], axis= 1)  #ids is N x clsNum mat
+        one_hot = tf.SparseTensor(indices= ids, values= tf.ones_like(lables, dtype= tf.float32), dense_shape = tf.to_int64(dense_shape))
+        one_hot = tf.sparse_reshape(one_hot, out_shape)
+        return  one_hot
