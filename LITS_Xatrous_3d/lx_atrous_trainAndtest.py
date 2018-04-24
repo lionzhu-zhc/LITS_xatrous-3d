@@ -19,7 +19,7 @@ trainPath = 'E:/Lianxin_40/LxData_600_cut_280/train_npy_cutslice/'
 testPath = 'E:/Lianxin_40/LxData_600_cut_280/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp6/'
+resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp7/'
 
 IMAGE_WIDTH = 280
 IMAGE_HEIGHT = 280
