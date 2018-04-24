@@ -123,4 +123,4 @@ def labels_to_onehot(lables, class_num = 1):
         ids = tf.stack([ids, lables], axis= 1)  #ids is N x clsNum mat
         one_hot = tf.SparseTensor(indices= ids, values= tf.ones_like(lables, dtype= tf.float32), dense_shape = tf.to_int64(dense_shape))
         one_hot = tf.sparse_reshape(one_hot, out_shape)
-        return  one_hot
+        return tf.cast(one_hot, tf.float32)

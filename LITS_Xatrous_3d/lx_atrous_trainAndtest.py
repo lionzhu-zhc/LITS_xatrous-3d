@@ -15,11 +15,11 @@ import numpy as np
 import datetime
 
 
-trainPath = 'E:/Lianxin_LITS/lxData_rs_600_cut_280/train_cutslice_npy/'
-testPath = 'E:/Lianxin_LITS/lxData_rs_600_cut_280/test_npy/'
+trainPath = 'E:/Lianxin_40/LxData_600_cut_280/train_npy_cutslice/'
+testPath = 'E:/Lianxin_40/LxData_600_cut_280/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp5/'
+resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp6/'
 
 IMAGE_WIDTH = 280
 IMAGE_HEIGHT = 280
@@ -27,7 +27,7 @@ IMAGE_DEPTH = 24
 
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
-MAX_ITERATION = 20
+MAX_ITERATION = 15000
 CLASSNUM = 2
 
 
@@ -55,7 +55,7 @@ def FCNX_run():
         #
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
-        loss_reduce = LossPy.dice(pred = logits, ground_truth= annotation)
+        loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
         tf.summary.scalar('loss', loss_reduce)
 
     with tf.name_scope('trainOP'):
@@ -81,6 +81,9 @@ def FCNX_run():
 
         for itr in range(MAX_ITERATION):
             vol_batch, seg_batch = utils.get_data_train(trainPath)
+            # vol_batch_2, seg_batch_2 = utils.get_data_train(trainPath)
+            # vol_batch = np.concatenate((vol_batch, vol_batch_2), axis= 0)
+            # seg_batch = np.concatenate((seg_batch, seg_batch_2), axis= 0)
 
             global LEARNING_RATE
             if (itr + 1) % 1000 == 0:
@@ -89,7 +92,7 @@ def FCNX_run():
 
             # lr = LEARNING_RATE * math.pow((1 - itr/ MAX_ITERATION), 0.9)
             # print(LEARNING_RATE)
-
+            #--------------------------------------------train_batchsize here--------------------------------------------------------
             feed = {LRate: LEARNING_RATE, image: vol_batch, annotation: seg_batch, bn_flag: True, train_batchsize: 1}
             sess.run(train_op, feed_dict= feed)
             train_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=feed)
@@ -97,7 +100,7 @@ def FCNX_run():
             print('loss:', train_loss_print)
             writer.add_summary(summary_str, itr)
 
-            if (itr + 1) % 10000 == 0:
+            if (itr + 1) % 5000 == 0:
                 saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1) )
 
 #-------------------------------------Test Test Test Test-------------------------------------------------------------------------------
