@@ -4,9 +4,13 @@ training and test lianxin data, use Network.py pspnet
 
 0414
 lianxin, use NetDeepLab deeplab+FCN
+
+0426
+use ori net with dice_loss
 '''
 
-import NetDeepLab_V2
+#import NetDeepLab_V2
+import Network
 import utils
 import LossPy
 import os
@@ -19,7 +23,7 @@ trainPath = 'E:/Lianxin_40/LxData_600_cut_280/train_npy_cutslice/'
 testPath = 'E:/Lianxin_40/LxData_600_cut_280/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp7/'
+resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp8/'
 
 IMAGE_WIDTH = 280
 IMAGE_HEIGHT = 280
@@ -45,7 +49,7 @@ def FCNX_run():
 
     bn_flag = tf.placeholder(tf.bool)
     train_batchsize = tf.placeholder(tf.int32)
-    pred_annot, logits = NetDeepLab_V2.LITS_DLab(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
+    pred_annot, logits = Network.build_LITS_Xatrous_3d(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
                                             IMAGE_DEPTH= IMAGE_DEPTH, IMAGE_HEIGHT = IMAGE_HEIGHT, IMAGE_WIDTH= IMAGE_WIDTH, CLASSNUM= CLASSNUM)
 
 

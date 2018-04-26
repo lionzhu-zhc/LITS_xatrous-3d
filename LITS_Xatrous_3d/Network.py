@@ -1,6 +1,7 @@
 '''
 20180404 LionZhu
 the file for net structure
+the ori net changed from pspnet
 '''
 
 import tensorflow as tf
