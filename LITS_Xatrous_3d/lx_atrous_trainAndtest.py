@@ -9,8 +9,8 @@ lianxin, use NetDeepLab deeplab+FCN
 use ori net with dice_loss
 '''
 
-#import NetDeepLab_V2
-import Network
+import NetDeepLab_V2
+#import Network
 import utils
 import LossPy
 import os
@@ -23,7 +23,7 @@ trainPath = 'E:/Lianxin_40/LxData_600_cut_280/train_npy_cutslice/'
 testPath = 'E:/Lianxin_40/LxData_600_cut_280/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp8/'
+resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp9/'
 
 IMAGE_WIDTH = 280
 IMAGE_HEIGHT = 280
@@ -49,7 +49,7 @@ def FCNX_run():
 
     bn_flag = tf.placeholder(tf.bool)
     train_batchsize = tf.placeholder(tf.int32)
-    pred_annot, logits = Network.build_LITS_Xatrous_3d(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
+    pred_annot, logits = NetDeepLab_V2.LITS_DLab(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
                                             IMAGE_DEPTH= IMAGE_DEPTH, IMAGE_HEIGHT = IMAGE_HEIGHT, IMAGE_WIDTH= IMAGE_WIDTH, CLASSNUM= CLASSNUM)
 
 
@@ -83,16 +83,17 @@ def FCNX_run():
         scope.reuse_variables()
         saver = tf.train.Saver()
 
+        global LEARNING_RATE
+
         for itr in range(MAX_ITERATION):
             vol_batch, seg_batch = utils.get_data_train(trainPath)
             # vol_batch_2, seg_batch_2 = utils.get_data_train(trainPath)
             # vol_batch = np.concatenate((vol_batch, vol_batch_2), axis= 0)
             # seg_batch = np.concatenate((seg_batch, seg_batch_2), axis= 0)
 
-            global LEARNING_RATE
-            if (itr + 1) % 1000 == 0:
+            if (itr + 1) % 500 == 0:
                 LEARNING_RATE = LEARNING_RATE * 0.90
-                print(LEARNING_RATE)
+                print('learning_rate:',LEARNING_RATE)
 
             # lr = LEARNING_RATE * math.pow((1 - itr/ MAX_ITERATION), 0.9)
             # print(LEARNING_RATE)
