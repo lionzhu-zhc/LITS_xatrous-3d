@@ -98,6 +98,7 @@ def save_npys(resultPath, name_pre, label_batch, pred_batch):
     np.save(resultPath + 'npys/' + name_pre + '-mask.npy', label_batch)
     np.save(resultPath + 'npys/' + name_pre + '-pred.npy', pred_batch)
 
+
 def labels_to_onehot(lables, class_num = 1):
     '''
     :param lables:  shape [batchsize, depth, height, width], 4D, no channel axis
