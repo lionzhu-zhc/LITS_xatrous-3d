@@ -9,8 +9,8 @@ lianxin, use NetDeepLab deeplab+FCN
 use ori net with dice_loss
 '''
 
-import NetDeepLab_V2
-#import Network
+#import NetDeepLab_V2
+import Network
 import utils
 import LossPy
 import os
@@ -19,20 +19,20 @@ import numpy as np
 import datetime
 
 
-trainPath = 'E:/Lianxin_40/LxData_600_cut_280/train_npy_cutslice/'
-testPath = 'E:/Lianxin_40/LxData_600_cut_280/test_npy/'
+trainPath = 'E:/Lianxin_40/LxData_600_cut_128/train_npy/'
+testPath = 'E:/Lianxin_40/LxData_600_cut_128/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/FCNDEEPLAB_lx280/exp10/'
+resultPath = 'D:/LITS_Rst/LITS_lx_128/exp1/'
 
-IMAGE_WIDTH = 280
-IMAGE_HEIGHT = 280
-IMAGE_DEPTH = 24
+IMAGE_WIDTH = 128
+IMAGE_HEIGHT = 128
+IMAGE_DEPTH = 64
 
 
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
-MAX_ITERATION = 20000
+MAX_ITERATION = 15000
 CLASSNUM = 2
 
 
@@ -50,14 +50,14 @@ def FCNX_run():
 
     bn_flag = tf.placeholder(tf.bool)
     train_batchsize = tf.placeholder(tf.int32)
-    pred_annot, logits = NetDeepLab_V2.LITS_DLab(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
+    pred_annot, logits = Network.build_LITS_Xatrous_3d(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
                                             IMAGE_DEPTH= IMAGE_DEPTH, IMAGE_HEIGHT = IMAGE_HEIGHT, IMAGE_WIDTH= IMAGE_WIDTH, CLASSNUM= CLASSNUM)
 
 
     with tf.name_scope('loss'):
         class_weight = tf.constant([0.15, 1])
         loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
-
+        #
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
         #loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
@@ -88,9 +88,9 @@ def FCNX_run():
 
         for itr in range(MAX_ITERATION):
             vol_batch, seg_batch = utils.get_data_train(trainPath)
-            # vol_batch_2, seg_batch_2 = utils.get_data_train(trainPath)
-            # vol_batch = np.concatenate((vol_batch, vol_batch_2), axis= 0)
-            # seg_batch = np.concatenate((seg_batch, seg_batch_2), axis= 0)
+            vol_batch_2, seg_batch_2 = utils.get_data_train(trainPath)
+            vol_batch = np.concatenate((vol_batch, vol_batch_2), axis= 0)
+            seg_batch = np.concatenate((seg_batch, seg_batch_2), axis= 0)
 
             if (itr + 1) % 500 == 0:
                 LEARNING_RATE = LEARNING_RATE * 0.90
@@ -99,7 +99,7 @@ def FCNX_run():
             # lr = LEARNING_RATE * math.pow((1 - itr/ MAX_ITERATION), 0.9)
             # print(LEARNING_RATE)
             #--------------------------------------------train_batchsize here--------------------------------------------------------
-            feed = {LRate: LEARNING_RATE, image: vol_batch, annotation: seg_batch, bn_flag: True, train_batchsize: 1}
+            feed = {LRate: LEARNING_RATE, image: vol_batch, annotation: seg_batch, bn_flag: True, train_batchsize: 2}
             sess.run(train_op, feed_dict= feed)
             train_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=feed)
             print(itr, vol_batch.shape)

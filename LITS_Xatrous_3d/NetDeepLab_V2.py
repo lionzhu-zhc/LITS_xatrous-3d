@@ -208,19 +208,19 @@ def LITS_DLab(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIGHT, IMAGE_WI
                                         in_channel= 128, out_channel= 256, c_stride=1, name= 'Deconv')
         bn_res = tf.layers.batch_normalization(deconv, momentum=0.9, training=BN_FLAG, name='BN')
         deconv1_res = tf.nn.relu(bn_res)
-        #fuse1_res = tf.add(deconv1_res, pool2_res)       # out channel 256
+        fuse1_res = tf.add(deconv1_res, pool2_res)       # out channel 256
 
     with tf.variable_scope('Deconv2'):
-        deconv = conv3d_transpose_layer(kernel_size=3, in_put= deconv1_res, out_shape=tf.shape(pool_res),
+        deconv = conv3d_transpose_layer(kernel_size=3, in_put= fuse1_res, out_shape=tf.shape(pool_res),
                                         in_channel= 256, out_channel= 128, c_stride=2, name= 'Deconv')
         bn_res = tf.layers.batch_normalization(deconv, momentum=0.9, training=BN_FLAG, name='BN')
         deconv2_res = tf.nn.relu(bn_res)
-        #fuse2_res = tf.add(deconv2_res, pool_res)    # out channel 128
+        fuse2_res = tf.add(deconv2_res, pool_res)    # out channel 128
 
     with tf.variable_scope('Deconv3'):
         tensor_in_shape = tf.shape(tensor_in)
         deconv3_shape = tf.stack([tensor_in_shape[0], tensor_in_shape[1], tensor_in_shape[2], tensor_in_shape[3], CLASSNUM])
-        deconv = conv3d_transpose_layer(kernel_size= 4, in_put= deconv2_res, out_shape= deconv3_shape,
+        deconv = conv3d_transpose_layer(kernel_size= 4, in_put= fuse2_res, out_shape= deconv3_shape,
                                         in_channel= 128, out_channel= CLASSNUM, c_stride=4, name= 'BN')
         bn_res = tf.layers.batch_normalization(deconv, momentum=0.9, training=BN_FLAG, name='BN')
         deconv3_res = tf.nn.relu(bn_res)  # out channel 3, shape=[batchsize, depth, height, width, channel]
