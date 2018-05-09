@@ -1,2 +1,0 @@
-liver_dice:  0.596 
-exp4_liver_dice:  0.573 
