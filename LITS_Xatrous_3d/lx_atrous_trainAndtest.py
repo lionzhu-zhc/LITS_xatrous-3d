@@ -32,7 +32,7 @@ IMAGE_DEPTH = 64
 
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
-MAX_ITERATION = 15000
+MAX_ITERATION = 20000
 CLASSNUM = 2
 
 
@@ -55,7 +55,7 @@ def FCNX_run():
 
 
     with tf.name_scope('loss'):
-        class_weight = tf.constant([0.1, 1])
+        class_weight = tf.constant([0.0354, 1])
         loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         #
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
