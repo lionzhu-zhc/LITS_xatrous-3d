@@ -23,7 +23,7 @@ trainPath = 'E:/Lianxin_40/LxData_600_cut_128/train_npy/'
 testPath = 'E:/Lianxin_40/LxData_600_cut_128/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/LITS_lx_128/exp2/'
+resultPath = 'D:/LITS_Rst/LITS_lx_128/exp3/'
 
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128
@@ -34,6 +34,7 @@ LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
 MAX_ITERATION = 20000
 CLASSNUM = 2
+TRAIN_BATCHSIZE = 2
 
 
 def training(lr, loss_val, va_list):
@@ -45,8 +46,10 @@ def training(lr, loss_val, va_list):
 
 def FCNX_run():
     with tf.name_scope('inputs'):
-        annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_DEPTH, IMAGE_HEIGHT, IMAGE_WIDTH, 1], name='annotation')
-        image = tf.placeholder(tf.float32, shape=[None, IMAGE_DEPTH, IMAGE_HEIGHT, IMAGE_WIDTH, 1], name='image')
+        #annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_DEPTH, IMAGE_HEIGHT, IMAGE_WIDTH, 1], name='annotation')
+        #image = tf.placeholder(tf.float32, shape=[None, IMAGE_DEPTH, IMAGE_HEIGHT, IMAGE_WIDTH, 1], name='image')
+        annotation = tf.placeholder(tf.int32, shape=[None, None, None, None, 1], name='annotation')
+        image = tf.placeholder(tf.float32, shape=[None, None, None, None, 1], name='image')
 
     bn_flag = tf.placeholder(tf.bool)
     train_batchsize = tf.placeholder(tf.int32)
@@ -56,20 +59,21 @@ def FCNX_run():
 
     with tf.name_scope('loss'):
         class_weight = tf.constant([0.0354, 1])
-        loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
-        #
+        #loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
-        #loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
+        loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
         tf.summary.scalar('loss', loss_reduce)
 
     with tf.name_scope('trainOP'):
         LRate = tf.placeholder(tf.float32)
         trainable_vars = tf.trainable_variables()
+        train_op = training(LRate, loss_reduce, trainable_vars)
+        tf.summary.scalar('lr', LRate)
         # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         # with tf.control_dependencies(update_ops):
         #     train_op = tf.train.AdamOptimizer(LEARNING_RATE).minimize(loss_reduce)
-        train_op = training(LRate, loss_reduce, trainable_vars)
+
 
     with tf.variable_scope('fcnx') as scope:
         config = tf.ConfigProto()
@@ -87,10 +91,7 @@ def FCNX_run():
         global LEARNING_RATE
 
         for itr in range(MAX_ITERATION):
-            vol_batch, seg_batch = utils.get_data_train(trainPath)
-            vol_batch_2, seg_batch_2 = utils.get_data_train(trainPath)
-            vol_batch = np.concatenate((vol_batch, vol_batch_2), axis= 0)
-            seg_batch = np.concatenate((seg_batch, seg_batch_2), axis= 0)
+            vol_batch, seg_batch = utils.get_data_train(trainPath, batchsize= TRAIN_BATCHSIZE)
 
             if (itr + 1) % 500 == 0:
                 LEARNING_RATE = LEARNING_RATE * 0.90
@@ -98,8 +99,8 @@ def FCNX_run():
 
             # lr = LEARNING_RATE * math.pow((1 - itr/ MAX_ITERATION), 0.9)
             # print(LEARNING_RATE)
-            #--------------------------------------------train_batchsize here--------------------------------------------------------
-            feed = {LRate: LEARNING_RATE, image: vol_batch, annotation: seg_batch, bn_flag: True, train_batchsize: 2}
+
+            feed = {LRate: LEARNING_RATE, image: vol_batch, annotation: seg_batch, bn_flag: True, train_batchsize: TRAIN_BATCHSIZE}
             sess.run(train_op, feed_dict= feed)
             train_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=feed)
             print(itr, vol_batch.shape)

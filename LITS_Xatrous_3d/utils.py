@@ -4,7 +4,20 @@ import tensorflow as tf
 import os
 import scipy.misc as smc
 
-def get_data_train(trainPath):
+def get_data_train(trainPath, batchsize):
+    vol_batch = []
+    seg_batch = []
+    for i in range (1, batchsize+1):
+        if i == 1:
+            vol_batch, seg_batch = get_batch_train(trainPath)
+        else:
+            vol_batch_tmp, seg_batch_tmp = get_batch_train(trainPath)
+            vol_batch = np.concatenate((vol_batch, vol_batch_tmp), axis= 0)
+            seg_batch = np.concatenate((seg_batch, seg_batch_tmp), axis= 0)
+    return vol_batch, seg_batch
+
+
+def get_batch_train(trainPath):
     dirs_train = os.listdir(trainPath + 'vol/')
     samples = random.choice(dirs_train)
     print(samples)
@@ -18,13 +31,9 @@ def get_data_train(trainPath):
     seg_batch = np.expand_dims(seg_batch, axis=4)
     vol_batch.astype(np.float32)
     seg_batch.astype(np.int32)
-
     return vol_batch, seg_batch
 
-
-
 def get_data_test(testPath, tDir):
-
     vol_batch = np.load(testPath + 'vol/' +tDir)
     seg_batch = np.load(testPath + 'seg/' +tDir)
     vol_batch = np.transpose(vol_batch, [2, 0, 1])  # shape[depth, width, height]
@@ -36,8 +45,6 @@ def get_data_test(testPath, tDir):
     vol_batch.astype(np.float32)
     seg_batch.astype(np.int32)
     return vol_batch, seg_batch
-
-
 
 
 def save_imgs(resultPath, name_pre, label_batch, pred_batch, IMAGE_DEPTH, IMAGE_WIDTH, IMAGE_HEIGHT):
