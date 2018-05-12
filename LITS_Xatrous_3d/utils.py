@@ -47,7 +47,10 @@ def get_data_test(testPath, tDir):
     return vol_batch, seg_batch
 
 
-def save_imgs(resultPath, name_pre, label_batch, pred_batch, IMAGE_DEPTH, IMAGE_WIDTH, IMAGE_HEIGHT):
+def save_imgs(resultPath, name_pre, label_batch, pred_batch):
+    IMAGE_DEPTH = label_batch.shape[2]
+    IMAGE_HEIGHT = label_batch.shape[0]
+    IMAGE_WIDTH = label_batch.shape[1]
     str_split = name_pre.split('-')
     if not(os.path.exists(resultPath + 'imgs/' + str_split[0])):
         os.makedirs(resultPath + 'imgs/' + str_split[0])

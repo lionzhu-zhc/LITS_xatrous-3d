@@ -307,7 +307,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
     # shape [_, depth, height, width, channel]
 
     with tf.variable_scope('SoftMax'):
-        pred_annot = tf.argmax(s3u6_conv, dimension=4, name='prediction')
+        pred_annot = tf.argmax(s3u6_conv, axis=4, name='prediction')
 
     return tf.expand_dims(pred_annot, dim=4), s3u6_conv
 

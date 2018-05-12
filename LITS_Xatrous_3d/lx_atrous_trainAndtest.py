@@ -120,12 +120,12 @@ def FCNX_run():
                     test_pred_annotation = sess.run([pred_annot], feed_dict=test_feed)
                     label_batch = np.squeeze(seg_batch)
                     pred_batch = np.squeeze(test_pred_annotation)
-                    label_tosave = np.transpose(label_batch, (2, 1, 0))
+                    label_tosave = np.transpose(label_batch, (2, 1, 0))  # transpose to HWD
                     pred_tosave = np.transpose(pred_batch, (2, 1, 0))
 
                     namePre = tDir[:-4]
                     print("test_itr:", namePre)
-                    utils.save_imgs(resultPath, namePre, label_tosave, pred_tosave, IMAGE_DEPTH, IMAGE_WIDTH, IMAGE_HEIGHT)
+                    utils.save_imgs(resultPath, namePre, label_tosave, pred_tosave)
                     utils.save_npys(resultPath, namePre, label_tosave, pred_tosave)
 
 
