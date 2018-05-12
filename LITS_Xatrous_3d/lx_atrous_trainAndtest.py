@@ -23,7 +23,7 @@ trainPath = 'E:/Lianxin_40/LxData_600_cut_128/train_npy/'
 testPath = 'E:/Lianxin_40/LxData_600_cut_128/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/LITS_lx_128/exp3/'
+resultPath = 'D:/LITS_Rst/LITS_lx_128/exp4/'
 
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128
@@ -58,11 +58,11 @@ def FCNX_run():
 
 
     with tf.name_scope('loss'):
-        class_weight = tf.constant([0.0354, 1])
-        #loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
+        class_weight = tf.constant([0.2, 1])
+        loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
-        loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
+        #loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
         tf.summary.scalar('loss', loss_reduce)
 
     with tf.name_scope('trainOP'):
