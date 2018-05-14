@@ -19,11 +19,11 @@ import numpy as np
 import datetime
 
 
-trainPath = 'E:/Lianxin_40/LxData_600_cut_128/train_npy/'
-testPath = 'E:/Lianxin_40/LxData_600_cut_128/test_npy/'
+trainPath = 'E:/LITS/LITS_RS_280_128/train_npy/'
+testPath = 'E:/LITS/LITS_RS_280_128/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/LITS_lx_128/exp5/'
+resultPath = 'D:/LITS_Rst/LITS_ch_128/exp1/'
 
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128
@@ -32,8 +32,8 @@ IMAGE_DEPTH = 64
 
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
-MAX_ITERATION = 20000
-CLASSNUM = 2
+MAX_ITERATION = 60000
+CLASSNUM = 3
 TRAIN_BATCHSIZE = 2
 
 
@@ -58,7 +58,7 @@ def FCNX_run():
 
 
     with tf.name_scope('loss'):
-        class_weight = tf.constant([1, 1])
+        class_weight = tf.constant([0.2, 1, 20])
         loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
