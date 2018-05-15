@@ -65,14 +65,18 @@ nparr = np.array([[1,2],[3,4]])
 # print(i)
 # print('ok')
 
-a = tf.constant([[[0, 0, 1], [0, 0, 1]],[[1, 0, 1], [0, 1, 1]]]) #2x2x3
-sum_1 = tf.reduce_sum(a, axis= [1])
-sum_2 = tf.reduce_sum(a, reduction_indices= 1)
+# a = tf.constant([[[0, 0, 1], [0, 0, 1]],[[1, 0, 1], [0, 1, 1]]]) #2x2x3
+# sum_1 = tf.reduce_sum(a, axis= [1])
+# sum_2 = tf.reduce_sum(a, reduction_indices= 1)
+#
+# init = tf.global_variables_initializer()
+# sess = tf.Session()
+# sess.run(init)
+# s1 = sess.run(sum_1)
+# s2 = sess.run(sum_2)
+# print(s1)
+# print(s2)
 
-init = tf.global_variables_initializer()
-sess = tf.Session()
-sess.run(init)
-s1 = sess.run(sum_1)
-s2 = sess.run(sum_2)
-print(s1)
-print(s2)
+a  = np.load('E:/LITS/LITS_RS_280_128/train_npy/vol/32-0.npy')
+
+print ('ok')
