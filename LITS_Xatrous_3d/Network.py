@@ -303,7 +303,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
 
     with tf.variable_scope('s3_u6_conv'):
         s3u6_conv = conv_layer(kernel_size=1, in_put=s3u5_deconv, in_channel=64,
-                                    out_channel=CLASSNUM, name='conv')
+                                    out_channel=CLASSNUM, name='Conv')
     # shape [_, depth, height, width, channel]
 
     with tf.variable_scope('SoftMax'):
@@ -318,15 +318,6 @@ def conv_layer(kernel_size, in_put, in_channel, out_channel, c_stride = 1, c_rat
         conv_addbias = tf.nn.bias_add(conv, conv_bias)
         return conv_addbias
 
-
-def get_var(kernel_size, in_channel, out_channel, name = None):
-    weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, in_channel, out_channel],
-                              initializer= tf.contrib.layers.xavier_initializer())
-    bias = tf.get_variable('b', [out_channel], initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
-
-    return weights, bias
-
-
 def max_pool3d(in_tensor, ksize, stride):
     maxpool_res = tf.nn.max_pool3d(in_tensor, ksize=[1, ksize, ksize, ksize, 1],
                                    strides=[1, stride, stride, stride, 1], padding='SAME', name='MaxPool')
@@ -339,11 +330,36 @@ def conv3d_transpose_layer( kernel_size, in_put, out_shape, in_channel, out_chan
         deconv_addbias = tf.nn.bias_add(deconv, deconv_bias)
         return  deconv_addbias
 
+# xavier initializer---------------------------------------------------------------------------------------------------
+# def get_var(kernel_size, in_channel, out_channel, name = None):
+#     weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, in_channel, out_channel],
+#                               initializer= tf.contrib.layers.xavier_initializer())
+#     bias = tf.get_variable('b', [out_channel], initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
+#
+#     return weights, bias
+#
+# def get_var_transpose(kernel_size, in_channel, out_channel, name = None):
+#     weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, out_channel, in_channel],
+#                               initializer=tf.contrib.layers.xavier_initializer())
+#
+#     bias = tf.get_variable('b', [out_channel],
+#                            initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
+#     return weights, bias
+
+
+# normal init-----------------------------------------------------------------------------------------------------------
+
+def get_var(kernel_size, in_channel, out_channel, name = None):
+    init_value = tf.truncated_normal([kernel_size, kernel_size, kernel_size, in_channel, out_channel], 0.0, 0.01)
+    weights = tf.Variable(init_value, name= 'w')
+    init_value = tf.truncated_normal([out_channel], 0.0, 0.01)
+    bias = tf.Variable(init_value, name= 'b')
+    return  weights, bias
 
 def get_var_transpose(kernel_size, in_channel, out_channel, name = None):
-    weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, out_channel, in_channel],
-                              initializer=tf.contrib.layers.xavier_initializer())
+    init_value = tf.truncated_normal([kernel_size, kernel_size, kernel_size, out_channel, in_channel], 0.0, 0.01)
+    weights = tf.Variable(init_value, name= 'w')
+    init_value = tf.truncated_normal([out_channel], 0.0, 0.01)
+    bias = tf.Variable(init_value, name= 'b')
+    return  weights, bias
 
-    bias = tf.get_variable('b', [out_channel],
-                           initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
-    return weights, bias

@@ -135,3 +135,10 @@ def labels_to_onehot(lables, class_num = 1):
         one_hot = tf.SparseTensor(indices= ids, values= tf.ones_like(lables, dtype= tf.float32), dense_shape = tf.to_int64(dense_shape))
         one_hot = tf.sparse_reshape(one_hot, out_shape)
         return tf.cast(one_hot, tf.float32)
+
+
+def to_onehot(lables, class_num = 1):
+
+    one_hot = tf.one_hot(indices= lables, depth= class_num,
+                        on_value= 1.0, off_value= 0.0, axis= -1, dtype= tf.float32)  #one_hot shape [batch, d, h, w, channel] 5D
+    return one_hot

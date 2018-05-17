@@ -20,7 +20,7 @@ def dice(pred, ground_truth, weight_map = None):
     pred = tf.cast(pred, tf.float32)
     if (len(pred.shape)) == (len(ground_truth.shape)):
         ground_truth = ground_truth[...,-1]   # discard the channel axis
-    one_hot = utils.labels_to_onehot(ground_truth, class_num= tf.shape(pred)[-1])
+    one_hot = utils.to_onehot(ground_truth, class_num= 2)
 
     if weight_map is not None:
         n_classes = pred.shape[1].value  #depth??????
@@ -53,16 +53,16 @@ def dice_sqaure(pred, ground_truth, weight_map = None):
         ground_truth = ground_truth[...,-1]   # discard the channel axis
 
     #one_hot = utils.labels_to_onehot(ground_truth, class_num= tf.shape(pred)[-1])
-    one_hot = utils.labels_to_onehot(ground_truth, class_num= 2)
+    one_hot = utils.to_onehot(ground_truth, class_num= 2)
 
     if weight_map is not None:
         print('weight_map not none')
 
     else:
-        dice_numerator = 2.0 * tf.sparse_reduce_sum(one_hot * pred, axis= [0])
+        dice_numerator = 2.0 * tf.reduce_sum(one_hot * pred, axis= [0])
 
         dice_denominator = tf.reduce_sum(tf.square(pred), axis=[0]) + \
-                           tf.sparse_reduce_sum(one_hot, axis=[0])
+                           tf.reduce_sum(one_hot, axis=[0])
 
     dice_coe = dice_numerator / (dice_denominator + smooth)
     return 1- tf.reduce_mean(dice_coe)
