@@ -51,7 +51,9 @@ def dice_sqaure(pred, ground_truth, weight_map = None):
 
     if (len(pred.shape)) == (len(ground_truth.shape)):
         ground_truth = ground_truth[...,-1]   # discard the channel axis
-    one_hot = utils.labels_to_onehot(ground_truth, class_num= tf.shape(pred)[-1])
+
+    #one_hot = utils.labels_to_onehot(ground_truth, class_num= tf.shape(pred)[-1])
+    one_hot = utils.labels_to_onehot(ground_truth, class_num= 2)
 
     if weight_map is not None:
         print('weight_map not none')
