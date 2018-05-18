@@ -53,7 +53,7 @@ def dice_sqaure(pred, ground_truth, weight_map = None):
         ground_truth = ground_truth[...,-1]   # discard the channel axis
 
     #one_hot = utils.labels_to_onehot(ground_truth, class_num= tf.shape(pred)[-1])
-    one_hot = utils.to_onehot(ground_truth, class_num= 2)
+    one_hot = utils.to_onehot(ground_truth, class_num= tf.shape(pred)[-1])
 
     if weight_map is not None:
         print('weight_map not none')
@@ -67,3 +67,25 @@ def dice_sqaure(pred, ground_truth, weight_map = None):
     dice_coe = dice_numerator / (dice_denominator + smooth)
     return 1- tf.reduce_mean(dice_coe)
 
+
+def focal_loss(pred, ground_truth, gamma = 2.0, alpha = 0.25):
+
+    if (len(pred.shape)) == (len(ground_truth.shape)):   # gt has the channel dim =1
+        ground_truth = ground_truth[...,-1]   # discard the channel axis
+    gt_onehot = utils.to_onehot(ground_truth, class_num= tf.shape(pred)[-1])
+
+    sigmoid_p = tf.nn.sigmoid(pred)
+    zeros = tf.zeros_like(sigmoid_p, dtype= sigmoid_p.dtype)
+
+    #for positive pred, only need to consider front part loss, back part is 0
+    # gt > zeros == z=1, so positive coe = z- p
+    pos_p_sub = tf.where(gt_onehot > zeros, gt_onehot - sigmoid_p, zeros)
+
+    #for negative pred, only need to consider back part loss, front part loss is 0
+    # gt > zeros == z=1, so negative coe = 0
+    neg_p_sub = tf.where(gt_onehot > zeros, zeros, sigmoid_p)
+
+    entropy_cross = -alpha *(pos_p_sub ** gamma) * tf.log(tf.clip_by_value(sigmoid_p, 1e-8, 1.0)) \
+                    - (1 - alpha) * (neg_p_sub ** gamma) * tf.log(tf.clip_by_value(1 - sigmoid_p, 1e-8, 1.0))
+
+    return tf.reduce_sum(entropy_cross)

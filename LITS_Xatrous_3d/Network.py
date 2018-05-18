@@ -304,7 +304,7 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
     with tf.variable_scope('s3_u6_conv'):
         s3u6_conv = conv_layer(kernel_size=1, in_put=s3u5_deconv, in_channel=64,
                                     out_channel=CLASSNUM, name='Conv')
-    # shape [_, depth, height, width, channel]
+    # shape [BS, depth, height, width, CLASSNUM]
 
     with tf.variable_scope('SoftMax'):
         pred_annot = tf.argmax(s3u6_conv, axis=4, name='prediction')
