@@ -19,11 +19,11 @@ import numpy as np
 import datetime
 
 
-trainPath = 'E:/Lianxin_40/LxData_600_cut_128/train_npy_cutslice/'
+trainPath = 'E:/Lianxin_40/LxData_600_cut_128/train_npy/'
 testPath = 'E:/Lianxin_40/LxData_600_cut_128/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/LITS_lx_128/exp10/'
+resultPath = 'D:/LITS_Rst/LITS_lx_128/exp11/'
 
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128
@@ -32,7 +32,7 @@ IMAGE_DEPTH = 64
 
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
-MAX_ITERATION = 10000
+MAX_ITERATION = 20000
 CLASSNUM = 2
 TRAIN_BATCHSIZE = 2
 
