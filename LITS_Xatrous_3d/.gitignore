@@ -1,7 +1,4 @@
-
 *.xml
-LITS_Xatrous_3d/.idea/workspace.xml
-_pycache_/
 venv/
 .idea/
-.pyc
+*.pyc

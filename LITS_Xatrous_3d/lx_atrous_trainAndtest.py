@@ -23,7 +23,7 @@ trainPath = 'E:/Lianxin_40/LxData_600_cut_128/train_npy/'
 testPath = 'E:/Lianxin_40/LxData_600_cut_128/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/LITS_lx_128/exp12/'
+resultPath = 'D:/LITS_Rst/LITS_lx_128/exp13/'
 
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128

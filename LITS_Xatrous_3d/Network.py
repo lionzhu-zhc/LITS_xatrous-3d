@@ -331,35 +331,35 @@ def conv3d_transpose_layer( kernel_size, in_put, out_shape, in_channel, out_chan
         return  deconv_addbias
 
 # xavier initializer---------------------------------------------------------------------------------------------------
-# def get_var(kernel_size, in_channel, out_channel, name = None):
-#     weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, in_channel, out_channel],
-#                               initializer= tf.contrib.layers.xavier_initializer())
-#     bias = tf.get_variable('b', [out_channel], initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
-#
-#     return weights, bias
-#
-# def get_var_transpose(kernel_size, in_channel, out_channel, name = None):
-#     weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, out_channel, in_channel],
-#                               initializer=tf.contrib.layers.xavier_initializer())
-#
-#     bias = tf.get_variable('b', [out_channel],
-#                            initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
-#     return weights, bias
+def get_var(kernel_size, in_channel, out_channel, name = None):
+    weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, in_channel, out_channel],
+                              initializer= tf.contrib.layers.xavier_initializer())
+    bias = tf.get_variable('b', [out_channel], initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
+
+    return weights, bias
+
+def get_var_transpose(kernel_size, in_channel, out_channel, name = None):
+    weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, out_channel, in_channel],
+                              initializer=tf.contrib.layers.xavier_initializer())
+
+    bias = tf.get_variable('b', [out_channel],
+                           initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
+    return weights, bias
 
 
 # normal init-----------------------------------------------------------------------------------------------------------
 
-def get_var(kernel_size, in_channel, out_channel, name = None):
-    init_value = tf.truncated_normal([kernel_size, kernel_size, kernel_size, in_channel, out_channel], 0.0, 0.01)
-    weights = tf.Variable(init_value, name= 'w')
-    init_value = tf.truncated_normal([out_channel], 0.0, 0.01)
-    bias = tf.Variable(init_value, name= 'b')
-    return  weights, bias
-
-def get_var_transpose(kernel_size, in_channel, out_channel, name = None):
-    init_value = tf.truncated_normal([kernel_size, kernel_size, kernel_size, out_channel, in_channel], 0.0, 0.01)
-    weights = tf.Variable(init_value, name= 'w')
-    init_value = tf.truncated_normal([out_channel], 0.0, 0.01)
-    bias = tf.Variable(init_value, name= 'b')
-    return  weights, bias
+# def get_var(kernel_size, in_channel, out_channel, name = None):
+#     init_value = tf.truncated_normal([kernel_size, kernel_size, kernel_size, in_channel, out_channel], 0.0, 0.01)
+#     weights = tf.Variable(init_value, name= 'w')
+#     init_value = tf.truncated_normal([out_channel], 0.0, 0.01)
+#     bias = tf.Variable(init_value, name= 'b')
+#     return  weights, bias
+#
+# def get_var_transpose(kernel_size, in_channel, out_channel, name = None):
+#     init_value = tf.truncated_normal([kernel_size, kernel_size, kernel_size, out_channel, in_channel], 0.0, 0.01)
+#     weights = tf.Variable(init_value, name= 'w')
+#     init_value = tf.truncated_normal([out_channel], 0.0, 0.01)
+#     bias = tf.Variable(init_value, name= 'b')
+#     return  weights, bias
 
