@@ -9,8 +9,8 @@ lianxin, use NetDeepLab deeplab+FCN
 use ori net with dice_loss
 '''
 
-#import NetDeepLab_V2
-import Network
+import NetDeepLab_V2
+#import Network
 import utils
 import LossPy
 import os
@@ -23,7 +23,7 @@ trainPath = 'E:/Lianxin_40/LxData_600_cut_128/train_npy/'
 testPath = 'E:/Lianxin_40/LxData_600_cut_128/test_npy/'
 
 #change dir here ..............................................................
-resultPath = 'D:/LITS_Rst/LITS_lx_128/exp13/'
+resultPath = 'D:/LITS_Rst/LITS_lx_128/exp14/'
 
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128
@@ -46,14 +46,12 @@ def training(lr, loss_val, va_list):
 
 def FCNX_run():
     with tf.name_scope('inputs'):
-        #annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_DEPTH, IMAGE_HEIGHT, IMAGE_WIDTH, 1], name='annotation')
-        #image = tf.placeholder(tf.float32, shape=[None, IMAGE_DEPTH, IMAGE_HEIGHT, IMAGE_WIDTH, 1], name='image')
         annotation = tf.placeholder(tf.int32, shape=[None, None, None, None, 1], name='annotation')
         image = tf.placeholder(tf.float32, shape=[None, None, None, None, 1], name='image')
 
     bn_flag = tf.placeholder(tf.bool)
     train_batchsize = tf.placeholder(tf.int32)
-    pred_annot, logits = Network.build_LITS_Xatrous_3d(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
+    pred_annot, logits = NetDeepLab_V2.LITS_DLab(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
                                             IMAGE_DEPTH= IMAGE_DEPTH, IMAGE_HEIGHT = IMAGE_HEIGHT, IMAGE_WIDTH= IMAGE_WIDTH, CLASSNUM= CLASSNUM)
     #logits shape: [BS, depth, height, width, CLASSNUM]
 
