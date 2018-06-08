@@ -9,10 +9,8 @@ lianxin, use NetDeepLab deeplab+FCN
 use ori net with dice_loss
 '''
 
-import NetDeepLab_V2
-import Network
-import PSP_Atrous
-import UNet
+
+import UNet_2D
 import utils
 import LossPy
 import os
@@ -50,8 +48,8 @@ def training(lr, loss_val, va_list):
 
 def FCNX_run():
     with tf.name_scope('inputs'):
-        annotation = tf.placeholder(tf.int32, shape=[None, None, None, None, 1], name='annotation')   # shape BDHWC
-        image = tf.placeholder(tf.float32, shape=[None, None, None, None, 1], name='image')           # shape BDHWC
+        annotation = tf.placeholder(tf.int32, shape=[ None, None, None, 1], name='annotation')   # shape BDHWC
+        image = tf.placeholder(tf.float32, shape=[ None, None, None, 1], name='image')           # shape BDHWC
 
     bn_flag = tf.placeholder(tf.bool)
     keep_prob = tf.placeholder(tf.float32)
@@ -61,18 +59,18 @@ def FCNX_run():
     #                                         IMAGE_DEPTH= IMAGE_DEPTH, IMAGE_HEIGHT = IMAGE_HEIGHT, IMAGE_WIDTH= IMAGE_WIDTH, CLASSNUM= CLASSNUM)
     #logits shape: [BS, depth, height, width, CLASSNUM]
 
-    logits, pred_annot, _,_ = UNet.build_unet(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize, CLASSNUM= CLASSNUM, keep_porb= keep_prob, in_channels= 1)
+    logits, pred_annot, _,_ = UNet_2D.build_unet(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize, CLASSNUM= CLASSNUM, keep_porb= keep_prob, in_channels= 1)
 
 
     with tf.name_scope('loss'):
         class_weight = tf.constant([0.1,1])
-        #loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
+        loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
 
         #loss_reduce = LossPy.focal_loss(pred= logits, ground_truth= annotation)
 
-        loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
+        #loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
         tf.summary.scalar('loss', loss_reduce)
 
     with tf.name_scope('trainOP'):
@@ -135,12 +133,12 @@ def FCNX_run():
                     test_pred_annotation = sess.run([pred_annot], feed_dict=test_feed)
                     label_batch = np.squeeze(seg_batch)
                     pred_batch = np.squeeze(test_pred_annotation)
-                    label_tosave = np.transpose(label_batch, (2, 1, 0))  # DHW transpose to HWD
-                    pred_tosave = np.transpose(pred_batch, (2, 1, 0))
+                    label_tosave = np.transpose(label_batch, (1, 0))
+                    pred_tosave = np.transpose(pred_batch, (1, 0))
 
                     namePre = tDir[:-4]
                     print("test_itr:", namePre)
-                    utils.save_imgs_IELES(resultPath, namePre, label_tosave, pred_tosave)
+                    utils.save_imgs_IELES_2d(resultPath, namePre, label_tosave, pred_tosave)
                     utils.save_npys(resultPath, namePre, label_tosave, pred_tosave)
 
 

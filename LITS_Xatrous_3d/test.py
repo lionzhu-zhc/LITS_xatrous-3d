@@ -77,6 +77,7 @@ nparr = np.array([[1,2],[3,4]])
 # print(s1)
 # print(s2)
 
-a  = np.load('E:/LITS/LITS_RS_280_128/train_npy/vol/32-0.npy')
+a = np.load('E:/MRI Brain Seg/Dataset/test/npy/seg/training_42.npy')
+b = a[...,7]
 
 print ('ok')
