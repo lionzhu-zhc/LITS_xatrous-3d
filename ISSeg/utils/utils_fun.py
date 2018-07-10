@@ -202,8 +202,8 @@ def save_imgs_IELES_2d(resultPath, name_pre, label_batch, pred_batch):
     IMAGE_WIDTH = label_batch.shape[1]
     str_split = name_pre.split('_')
 
-    if not(os.path.exists(resultPath + 'imgs/' + str_split[0] + '_' + str_split[1])):
-        os.makedirs(resultPath + 'imgs/' + str_split[0] + '_' + str_split[1])
+    if not(os.path.exists(resultPath + 'imgs/' + str_split[0])):
+        os.makedirs(resultPath + 'imgs/' + str_split[0])
 
     for dept in range(IMAGE_DEPTH):
         label_img_mat = np.zeros((3, IMAGE_WIDTH, IMAGE_HEIGHT))
@@ -247,9 +247,9 @@ def save_imgs_IELES_2d(resultPath, name_pre, label_batch, pred_batch):
 
 
         smc.toimage(label_img_mat, cmin=0.0, cmax=255).save(
-            resultPath + 'imgs/' + str_split[0] + '_' + str_split[1] + '/' + str_split[2] + '-mask.png' )
+            resultPath + 'imgs/' + str_split[0] + '/' + str_split[1] + '-mask.png' )
         smc.toimage(pred_img_mat, cmin=0.0, cmax=255).save(
-            resultPath + 'imgs/' + str_split[0] + '_' + str_split[1] + '/' + str_split[2] + '-pred.png' )
+            resultPath + 'imgs/' + str_split[0] + '/' + str_split[1] + '-pred.png' )
 
 
 def save_npys(resultPath, name_pre, label_batch, pred_batch):
