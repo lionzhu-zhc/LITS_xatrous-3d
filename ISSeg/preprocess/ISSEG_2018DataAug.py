@@ -11,8 +11,8 @@ import scipy.io as sio
 from PIL import Image
 import cv2
 
-dataPath = 'E:/MRI Brain Seg/Dataset/2018REGROUP/all'
-cases = os.listdir(os.path.join(dataPath, 'vol'))
+dataPath = 'E:/ISSEG/Dataset/2018REGROUP/all'
+cases = os.listdir(os.path.join(dataPath, 'vol_case'))
 random.shuffle(cases)
 
 def zscore(x):
@@ -27,7 +27,6 @@ def zscore(x):
 
 def aug(data, mode):
     shap = data.shape
-    dx = dy = 30
     for m in mode:
         if m == 'mirror':
             mir = np.zeros_like(data)
@@ -43,8 +42,12 @@ def aug(data, mode):
                 rot_90[..., i] = np.rot90(data[..., i], 3)
         if m == 'trans':
             trans_1 = np.zeros_like(data)
+            dx = random.randint(-30, 30)
+            dy = random.randint(-30, 30)
             T_1 = np.float32([[1,0,dx], [0,1,dy]])
             trans_2 = np.zeros_like(data)
+            dx = random.randint(-30, 30)
+            dy = random.randint(-30, 30)
             T_2 = np.float32([[1, 0, -dx], [0, 1, -dy]])
             for i in range(shap[2]):
                 trans_1[..., i] = cv2.warpAffine(data[..., i], T_1, (shap[0], shap[0]))
@@ -55,8 +58,8 @@ def aug(data, mode):
 def prepareTrain(augFlag):
     for i in range(60):
         print(cases[i])
-        volPath = os.path.join(dataPath, 'vol', cases[i])
-        segPath = os.path.join(dataPath, 'seg', cases[i])
+        volPath = os.path.join(dataPath, 'vol_case', cases[i])
+        segPath = os.path.join(dataPath, 'seg_case', cases[i])
         vols = os.listdir(volPath)
         segs = os.listdir(segPath)
         for f in vols:
@@ -93,18 +96,18 @@ def prepareTrain(augFlag):
                 np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4] + '_tran1.npy'), v_trans1.astype(np.float32))
                 np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4] + '_tran2.npy'), v_trans2.astype(np.float32))
                 # save aug segs
-                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_mir.npy'), s_mir.astype(np.float32))
-                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_r90.npy'), s_rot90.astype(np.float32))
-                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_rn90.npy'), s_rot_90.astype(np.float32))
-                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_tran1.npy'), s_trans1.astype(np.float32))
-                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_tran2.npy'), s_trans2.astype(np.float32))
+                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_mir.npy'), s_mir.astype(np.uint8))
+                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_r90.npy'), s_rot90.astype(np.uint8))
+                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_rn90.npy'), s_rot_90.astype(np.uint8))
+                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_tran1.npy'), s_trans1.astype(np.uint8))
+                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_tran2.npy'), s_trans2.astype(np.uint8))
 
 
 def prepareTest():
     for i in range(60, len(cases)):
         print(cases[i])
-        volPath = os.path.join(dataPath, 'vol', cases[i])
-        segPath = os.path.join(dataPath, 'seg', cases[i])
+        volPath = os.path.join(dataPath, 'vol_case', cases[i])
+        segPath = os.path.join(dataPath, 'seg_case', cases[i])
         vols = os.listdir(volPath)
         segs = os.listdir(segPath)
         for f in vols:

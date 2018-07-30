@@ -13,8 +13,8 @@ import cv2
 import scipy.io as sio
 import random
 
-oriDataset = 'E:/MRI Brain Seg/ISLES2018/TRAINING'
-dstDataset = 'E:/MRI Brain Seg/Dataset/2018REGROUP/all'
+oriDataset = 'E:/ISSEG/ISLES2018_Training/TRAINING'
+dstDataset = 'E:/ISSEG/Dataset/2018REGROUP/all'
 
 cases = os.listdir(oriDataset)
 caseNum = len(cases)

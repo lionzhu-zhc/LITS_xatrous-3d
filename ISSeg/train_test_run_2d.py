@@ -13,11 +13,11 @@ import numpy as np
 import datetime
 
 
-trainPath = 'E:/MRI Brain Seg/Dataset/2018REGROUP/all/train/'
-testPath = 'E:/MRI Brain Seg/Dataset/2018REGROUP/all/test/'
+trainPath = 'E:/ISSEG/Dataset/2018REGROUP/all/train/'
+testPath = 'E:/ISSEG/Dataset/2018REGROUP/all/test/'
 
 #change dir here ..............................................................
-resultPath = 'D:/IESLES_Rst/CT_256/exp4/'
+resultPath = 'D:/IESLES_Rst/CT_256/exp5/'
 
 IMAGE_WIDTH = 256
 IMAGE_HEIGHT = 256
@@ -28,6 +28,7 @@ IMAGE_CHANNEL = 5
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4
 MAX_ITERATION = 8000
+ITER_PER_EPOCH = 70
 STEPINTERVAL = 8000
 CLASSNUM = 2
 TRAIN_BATCHSIZE = 32
@@ -52,7 +53,8 @@ def FCNX_run():
 
     #logits, pred_annot, _,_ = UNet_2D.build_unet(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize, CLASSNUM= CLASSNUM, keep_porb= keep_prob, in_channels= IMAGE_CHANNEL)
 
-    logits, pred_annot = NetDeepLab_2d.LITS_DLab(tensor_in = image, BN_FLAG = bn_flag, BATCHSIZE = train_batchsize, CLASSNUM = CLASSNUM, KEEPPROB = keep_prob, IMGCHANNEL = IMAGE_CHANNEL)
+    logits, pred_annot = NetDeepLab_2d.LITS_DLab(tensor_in = image, BN_FLAG = bn_flag, BATCHSIZE = train_batchsize,
+                                                 CLASSNUM = CLASSNUM, KEEPPROB = keep_prob, IMGCHANNEL = IMAGE_CHANNEL)
 
     with tf.name_scope('loss'):
         class_weight = tf.constant([0.15,1])
@@ -103,7 +105,32 @@ def FCNX_run():
             writer.add_summary(summary_str, itr)
 
             if (itr + 1) % STEPINTERVAL == 0:
-                saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1) )
+                saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1))
+
+
+            #-------------------------validation with IOU each 10 epoch------------------------------------------------------
+            if (itr + 1) % (ITER_PER_EPOCH * 10) == 0:
+                test_dirs = os.listdir(testPath + '/vol/')
+                one_pred_or_label = one_label_and_pred = 0
+
+                for t_dir in test_dirs:
+                    vol_batch, seg_batch = utils.get_data_test_2d(testPath, t_dir)
+                    test_feed = {image: vol_batch, annotation: seg_batch, bn_flag: False, keep_prob: 1,
+                                 train_batchsize: 1}
+                    test_pred_annotation = sess.run([pred_annot, merge_op], feed_dict=test_feed)
+                    label_batch = np.squeeze(seg_batch).astype(np.uint8)
+                    pred_batch = np.squeeze(test_pred_annotation).astype(np.uint8)
+                    label_bool = (label_batch == 1)
+                    pred_bool = (pred_batch == 1)
+                    union = np.logical_or(label_bool, pred_bool)
+                    intersection = np.logical_and(label_bool, pred_bool)
+                    one_pred_or_label = one_pred_or_label + np.count_nonzero(union)
+                    one_label_and_pred = one_label_and_pred + np.count_nonzero(intersection)
+
+                IOU = one_label_and_pred / (one_pred_or_label+1e-4)
+
+                tf.summary.scalar('IOU', IOU)
+
 
 #-------------------------------------Test Test Test Test-------------------------------------------------------------------------------
             if itr == (MAX_ITERATION - 1):
@@ -120,6 +147,8 @@ def FCNX_run():
                     pred_batch = np.squeeze(test_pred_annotation)
                     label_tosave = np.rot90(label_batch, 3).astype(np.uint8)
                     pred_tosave = np.rot90(pred_batch, 3).astype(np.uint8)
+                    label_tosave = np.fliplr(label_tosave)
+                    pred_tosave = np.fliplr(pred_tosave)
 
                     namePre = tDir[:-4]
                     print("test_itr:", namePre)

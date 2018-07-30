@@ -12,8 +12,8 @@ from PIL import Image
 import cv2
 import nibabel as nib
 
-dataPath = 'E:/MRI Brain Seg/Dataset/2018REGROUP/all'
-cases = os.listdir(os.path.join(dataPath, 'vol'))
+dataPath = 'E:/ISSEG/Dataset/2018REGROUP/all'
+cases = os.listdir(os.path.join(dataPath, 'vol_case'))
 random.shuffle(cases)
 
 def zscore(x):
@@ -56,8 +56,8 @@ def aug(data, mode):
 def prepareTrain(augFlag):
     for i in range(3):
         print(cases[i])
-        volPath = os.path.join(dataPath, 'vol', cases[i])
-        segPath = os.path.join(dataPath, 'seg', cases[i])
+        volPath = os.path.join(dataPath, 'vol_case', cases[i])
+        segPath = os.path.join(dataPath, 'seg_case', cases[i])
         vols = os.listdir(volPath)
         segs = os.listdir(segPath)
         for f in vols:
