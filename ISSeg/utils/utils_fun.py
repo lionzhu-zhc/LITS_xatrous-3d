@@ -53,7 +53,7 @@ def get_batch_train_2d(trainPath):
     seg_batch = np.load(trainPath + 'seg/' + samples)
     vol_batch = np.expand_dims(vol_batch, axis=0)
     seg_batch = np.expand_dims(seg_batch, axis=0)
-    vol_batch = np.expand_dims(vol_batch, axis=3)
+    #vol_batch = np.expand_dims(vol_batch, axis=3)
     seg_batch = np.expand_dims(seg_batch, axis=3)
     vol_batch.astype(np.float32)
     seg_batch.astype(np.int32)
@@ -77,11 +77,11 @@ def get_data_test_2d(testPath, tDir):
     seg_batch = np.load(testPath + 'seg/' + tDir)
     vol_batch = np.expand_dims(vol_batch, axis=0)
     seg_batch = np.expand_dims(seg_batch, axis=0)
-    vol_batch = np.expand_dims(vol_batch, axis=3)
+    #vol_batch = np.expand_dims(vol_batch, axis=3)
     seg_batch = np.expand_dims(seg_batch, axis=3)
     vol_batch.astype(np.float32)
     seg_batch.astype(np.int32)
-    return vol_batch, seg_batch
+    return vol_batch, seg_batch   # vol_shape [BWHC],[1,256,256,5]
 
 def save_imgs(resultPath, name_pre, label_batch, pred_batch):
     IMAGE_DEPTH = label_batch.shape[2]
@@ -190,7 +190,6 @@ def save_imgs_IELES(resultPath, name_pre, label_batch, pred_batch):
 
         pred_img_mat = np.transpose(pred_img_mat, [1, 2, 0])
 
-
         smc.toimage(label_img_mat, cmin=0.0, cmax=255).save(
             resultPath + 'imgs/' + str_split + '/%d-mask.png' % (dept))
         smc.toimage(pred_img_mat, cmin=0.0, cmax=255).save(
@@ -202,8 +201,9 @@ def save_imgs_IELES_2d(resultPath, name_pre, label_batch, pred_batch):
     IMAGE_WIDTH = label_batch.shape[1]
     str_split = name_pre.split('_')
 
-    if not(os.path.exists(resultPath + 'imgs/' + str_split[0])):
-        os.makedirs(resultPath + 'imgs/' + str_split[0])
+    casePath = resultPath + 'imgs/' + (str_split[0]+ '_'+ str_split[1]) + '/'
+    if not(os.path.exists(casePath)):
+        os.makedirs(casePath)
 
     for dept in range(IMAGE_DEPTH):
         label_img_mat = np.zeros((3, IMAGE_WIDTH, IMAGE_HEIGHT))
@@ -245,11 +245,10 @@ def save_imgs_IELES_2d(resultPath, name_pre, label_batch, pred_batch):
 
         pred_img_mat = np.transpose(pred_img_mat, [1, 2, 0])
 
-
         smc.toimage(label_img_mat, cmin=0.0, cmax=255).save(
-            resultPath + 'imgs/' + str_split[0] + '/' + str_split[1] + '-mask.png' )
+            casePath + str_split[2]  + '-mask.png' )
         smc.toimage(pred_img_mat, cmin=0.0, cmax=255).save(
-            resultPath + 'imgs/' + str_split[0] + '/' + str_split[1] + '-pred.png' )
+            casePath + str_split[2]  + '-pred.png' )
 
 
 def save_npys(resultPath, name_pre, label_batch, pred_batch):

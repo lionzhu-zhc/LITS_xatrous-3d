@@ -4,6 +4,7 @@
 
 
 import net.UNet_2D as UNet_2D
+import net.NetDeepLab_2d as NetDeepLab_2d
 import utils.utils_fun as utils
 import net.LossPy as LossPy
 import os
@@ -12,21 +13,22 @@ import numpy as np
 import datetime
 
 
-trainPath = 'E:/MRI Brain Seg/ISLES2018/process_set/npy2d/train/'
-testPath = 'E:/MRI Brain Seg/ISLES2018/process_set/npy2d/test/'
+trainPath = 'E:/MRI Brain Seg/Dataset/2018REGROUP/all/train/'
+testPath = 'E:/MRI Brain Seg/Dataset/2018REGROUP/all/test/'
 
 #change dir here ..............................................................
-resultPath = 'D:/IESLES_Rst/256_2d/exp2/'
+resultPath = 'D:/IESLES_Rst/CT_256/exp4/'
 
 IMAGE_WIDTH = 256
 IMAGE_HEIGHT = 256
+IMAGE_CHANNEL = 5
 #IMAGE_DEPTH = 24
 
 
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4
-MAX_ITERATION = 5000
-STEPINTERVAL = 5000
+MAX_ITERATION = 8000
+STEPINTERVAL = 8000
 CLASSNUM = 2
 TRAIN_BATCHSIZE = 32
 
@@ -41,23 +43,24 @@ def training(lr, loss_val, va_list):
 
 def FCNX_run():
     with tf.name_scope('inputs'):
-        annotation = tf.placeholder(tf.int32, shape=[ None, None, None, 1], name='annotation')   # shape BDHWC
-        image = tf.placeholder(tf.float32, shape=[ None, None, None, 1], name='image')           # shape BDHWC
+        annotation = tf.placeholder(tf.int32, shape=[ None, None, None, None], name='annotation')   # shape BHWC
+        image = tf.placeholder(tf.float32, shape=[ None, None, None, None], name='image')           # shape BHWC
 
     bn_flag = tf.placeholder(tf.bool)
     keep_prob = tf.placeholder(tf.float32)
     train_batchsize = tf.placeholder(tf.int32)
 
-    logits, pred_annot, _,_ = UNet_2D.build_unet(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize, CLASSNUM= CLASSNUM, keep_porb= keep_prob, in_channels= 1)
+    #logits, pred_annot, _,_ = UNet_2D.build_unet(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize, CLASSNUM= CLASSNUM, keep_porb= keep_prob, in_channels= IMAGE_CHANNEL)
 
+    logits, pred_annot = NetDeepLab_2d.LITS_DLab(tensor_in = image, BN_FLAG = bn_flag, BATCHSIZE = train_batchsize, CLASSNUM = CLASSNUM, KEEPPROB = keep_prob, IMGCHANNEL = IMAGE_CHANNEL)
 
     with tf.name_scope('loss'):
         class_weight = tf.constant([0.15,1])
-        loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
+        #loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
 
-        #loss_reduce = LossPy.focal_loss(pred= logits, ground_truth= annotation)
+        loss_reduce = LossPy.focal_loss(pred= logits, ground_truth= annotation)
 
         #loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
         tf.summary.scalar('loss', loss_reduce)
@@ -115,8 +118,8 @@ def FCNX_run():
                     test_pred_annotation = sess.run([pred_annot], feed_dict=test_feed)
                     label_batch = np.squeeze(seg_batch)
                     pred_batch = np.squeeze(test_pred_annotation)
-                    label_tosave = np.transpose(label_batch, (1, 0)).astype(np.uint8)
-                    pred_tosave = np.transpose(pred_batch, (1, 0)).astype(np.uint8)
+                    label_tosave = np.rot90(label_batch, 3).astype(np.uint8)
+                    pred_tosave = np.rot90(pred_batch, 3).astype(np.uint8)
 
                     namePre = tDir[:-4]
                     print("test_itr:", namePre)

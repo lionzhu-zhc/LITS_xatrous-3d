@@ -10,7 +10,6 @@ import random
 import scipy.io as sio
 from PIL import Image
 import cv2
-import nibabel as nib
 
 dataPath = 'E:/MRI Brain Seg/Dataset/2018REGROUP/all'
 cases = os.listdir(os.path.join(dataPath, 'vol'))
@@ -54,7 +53,7 @@ def aug(data, mode):
 
 
 def prepareTrain(augFlag):
-    for i in range(3):
+    for i in range(60):
         print(cases[i])
         volPath = os.path.join(dataPath, 'vol', cases[i])
         segPath = os.path.join(dataPath, 'seg', cases[i])
@@ -63,7 +62,7 @@ def prepareTrain(augFlag):
         for f in vols:
             vol = sio.loadmat(os.path.join(volPath, f))
             volData = vol['vol']
-            volData_zs = (volData)
+            volData_zs = zscore(volData)
             seg = sio.loadmat(os.path.join(segPath, f))
             segData = seg['seg']
             dstVolPath = os.path.join(dataPath, 'train', 'vol')
@@ -73,11 +72,8 @@ def prepareTrain(augFlag):
             if not os.path.exists(dstSegPath):
                 os.mkdir(dstSegPath)
 
-
-            img = nib.Nifti1Image(volData_zs, np.eye(4))
-            segg = nib.Nifti1Image(segData, np.eye(4))
-            nib.save(img, os.path.join(dstVolPath, cases[i]+'_'+f[:-4]+'_ori.nii'))
-            nib.save(segg, os.path.join(dstSegPath, cases[i] + '_' + f[:-4] + '_ori.nii'))
+            np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4]+'_ori.npy'), volData_zs.astype(np.float32))
+            np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4]+'_ori.npy'), segData.astype(np.uint8))
 
             # if AUGMENTATION
             if augFlag:
@@ -90,23 +86,48 @@ def prepareTrain(augFlag):
                 s_rot_90 = np.squeeze(s_rot_90)
                 s_trans1 = np.squeeze(s_trans1)
                 s_trans2 = np.squeeze(s_trans2)
+                # save aug volumes
+                np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4] + '_mir.npy'), v_mir.astype(np.float32))
+                np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4] + '_r90.npy'), v_rot90.astype(np.float32))
+                np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4] + '_rn90.npy'), v_rot_90.astype(np.float32))
+                np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4] + '_tran1.npy'), v_trans1.astype(np.float32))
+                np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4] + '_tran2.npy'), v_trans2.astype(np.float32))
+                # save aug segs
+                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_mir.npy'), s_mir.astype(np.float32))
+                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_r90.npy'), s_rot90.astype(np.float32))
+                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_rn90.npy'), s_rot_90.astype(np.float32))
+                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_tran1.npy'), s_trans1.astype(np.float32))
+                np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4] + '_tran2.npy'), s_trans2.astype(np.float32))
 
-                img_mir = nib.Nifti1Image(v_mir, np.eye(4) )
-                seg_mir = nib.Nifti1Image(s_mir, np.eye(4))
-                img_trans = nib.Nifti1Image(v_trans1, np.eye(4))
-                seg_trans = nib.Nifti1Image(s_trans1, np.eye(4))
-                nib.save(img_mir, os.path.join(dstVolPath, cases[i] + '_' + f[:-4] + '_mir.nii'))
-                nib.save(seg_mir, os.path.join(dstSegPath, cases[i] + '_' + f[:-4] + '_mir.nii'))
-                nib.save(img_trans, os.path.join(dstVolPath, cases[i] + '_' + f[:-4] + '_trans.nii'))
-                nib.save(seg_trans, os.path.join(dstSegPath, cases[i] + '_' + f[:-4] + '_trans.nii'))
 
+def prepareTest():
+    for i in range(60, len(cases)):
+        print(cases[i])
+        volPath = os.path.join(dataPath, 'vol', cases[i])
+        segPath = os.path.join(dataPath, 'seg', cases[i])
+        vols = os.listdir(volPath)
+        segs = os.listdir(segPath)
+        for f in vols:
+            vol = sio.loadmat(os.path.join(volPath, f))
+            volData = vol['vol']
+            volData_zs = zscore(volData)
+            seg = sio.loadmat(os.path.join(segPath, f))
+            segData = seg['seg']
+            dstVolPath = os.path.join(dataPath, 'test', 'vol')
+            if not os.path.exists(dstVolPath):
+                os.mkdir(dstVolPath)
+            dstSegPath = os.path.join(dataPath, 'test', 'seg')
+            if not os.path.exists(dstSegPath):
+                os.mkdir(dstSegPath)
 
-
+            np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4]+'_ori.npy'), volData_zs.astype(np.float32))
+            np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4]+'_ori.npy'), segData.astype(np.uint8))
 
 if __name__ == '__main__':
     augFlag = True
     print('prepare train......')
     prepareTrain(augFlag)
-
+    print('prepare test......')
+    prepareTest()
 
 print('ok')
