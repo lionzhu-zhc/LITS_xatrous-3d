@@ -17,7 +17,8 @@ def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL):
     
 
 
-def dense_block(in_put, )
+def dense_block(in_put, growth_rate):
+    
 
 
 def BN_Relu_Conv(in_put, in_channel, out_channel, keep_prob, BN_FLAG, kernel_size = 3, name = 'BN_Relu_Conv'):
