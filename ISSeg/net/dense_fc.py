@@ -7,33 +7,50 @@ import tensorflow as tf
 
 NUMPOOL = 4
 FIRST_LAYER_FILTERS = 48
-growth_rate
+GROWTH_RATE = 12
+LAYERS_PER_BLOCK = [LAYERS_PER_BLOCK] * (2 * NUMPOOL + 1)
 
-def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL):
+def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL, keep_prob):
     print(tensor_in.get_shape())
-
-    layers_per_block = [5] * (2 * NUMPOOL + 1)
-    first_layer = tf.nn.conv2d(tensor_in, filter= [3,3,IMGCHANNEL, FIRST_LAYER_FILTERS], strides= [1,1,1,1], padding= 'SAME', name= 'First_Conv')
+    # the first conv layer
+    stack = tf.nn.conv2d(tensor_in, filter= [3,3,IMGCHANNEL, FIRST_LAYER_FILTERS], strides= [1,1,1,1], padding= 'SAME', name= 'First_Conv')
 
     n_filters = FIRST_LAYER_FILTERS
+
+    skip_list= []
+
+    for i in range(NUMPOOL):
+        stack = dense_block(stack, LAYERS_PER_BLOCK[i], GROWTH_RATE, BN_FLAG, keep_prob, name= 'DenseBlock_{}'.format(i))
+        skip_list.append(stack)
+        stack = down_layer(stack, )
+
+
     
-def bottleneck_layer(in_put, growth_rate, keep_prob= 0.8, name):
+def bottleneck_layer(in_put, growth_rate, BN_FLAG, keep_prob= 0.8, name = None):
     with tf.name_scope(name):
         shap = in_put.get_shape()
         in_channel = shap[-1]
-        res = BN_Relu_Conv(in_put, in_channel, growth_rate*4, keep_prob, BN_FLAG, kernel_size= 1) 
+        res = BN_Relu_Conv(in_put, growth_rate, growth_rate*4, keep_prob, BN_FLAG, kernel_size= 1)
         res = tf.nn.dropout(res, keep_prob)
-        res = BN_Relu_Conv(in_put, growth_rate*4, growth_rate, keep_prob, BN_FLAG, kernel_size= 3)
+        res = BN_Relu_Conv(res, growth_rate*4, growth_rate, keep_prob, BN_FLAG, kernel_size= 3)
         res = tf.nn.dropout(res, keep_prob)
         return res
 
-def dense_block(in_put, n_layers, growth_rate, name):
+def dense_block(in_put, n_layers, growth_rate, BN_FLAG, keep_prob, name):
     with tf.name_scope(name):
         layer_concat = list()
         layer_concat.append(in_put)
 
+        res = bottleneck_layer(in_put, growth_rate, BN_FLAG, keep_prob, name= 'Bottle')
+        layer_concat.append(res)
 
+        for i in range (n_layers - 1):
+            res = tf.concat(layer_concat, axis= 3, name= 'concat')
+            res = bottleneck_layer(res, growth_rate, BN_FLAG, keep_prob, name= 'Bottle')
+            layer_concat.append(res)
 
+        res = tf.concat(layer_concat, axis= 3, name= 'concat')
+        return res
 
 def BN_Relu_Conv(in_put, in_channel, out_channel, keep_prob, BN_FLAG, kernel_size = 3, name = 'BN_Relu_Conv'):
     with tf.name_scope(name):
