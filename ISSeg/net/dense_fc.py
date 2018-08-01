@@ -43,7 +43,23 @@ def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL, keep_pro
     #-------------------up scale layers-----------------------------------------------------------
     for i in range(NUMPOOL):
         n_filters_keep = GROWTH_RATE * LAYERS_PER_BLOCK[NUMPOOL + i]
-        stack = up_layer(skip_list[i], )
+        stack = up_layer(skip_list[i], block_to_up, n_filters_keep, kernel_size= 3, stride= 2)
+
+        block_to_up = []
+
+        for j in range(LAYERS_PER_BLOCK[NUMPOOL + i + 1]):
+            l =BN_Relu_Conv(stack, GROWTH_RATE, keep_prob= 0.8, BN_FLAG= BN_FLAG, kernel_size= 3)
+            block_to_up.append(l)
+            stack = tf.concat([stack, l], axis= 3, name = 'Concat')
+
+    #----------------------the last 1x1 conv layer-----------------------------------------------
+    conv = BN_Relu_Conv(stack, out_channel= CLASSNUM, keep_prob= 0.8, BN_FLAG= BN_FLAG, kernel_size= 1)
+
+    #---------------------softmax layer-----------------------------------------------------------
+    with tf.name_scope('Argmax'):
+        annot_pred = tf.argmax(conv, axis= -1, name=  'Prediction')
+
+    return conv, tf.expand_dims(annot_pred, axis= 3)
 
 
 def BN_Relu_Conv(in_put, out_channel, keep_prob, BN_FLAG, kernel_size = 3, name = 'BN_Relu_Conv'):
@@ -63,8 +79,6 @@ def down_layer(in_put, out_channel, keep_prob, BN_FLAG, name = 'down_layer'):
         res = pool2d_layer(res, ksize = 2, stride= 2)
 
         return res
-
-
 
 def up_layer(skip_conn, block_to_up, n_filters_keep, kernel_size, stride, name= 'up_layer'):
     '''
