@@ -106,7 +106,7 @@ def FCNX_run():
                 LEARNING_RATE = LEARNING_RATE * 0.90
                 print('learning_rate:',LEARNING_RATE)
             # -------------------------validation with IOU each 10 epoch------------------------------------------------------
-            if itr % (ITER_PER_EPOCH * 5) == 0:
+            if (itr + 1)% (ITER_PER_EPOCH * 5) == 0:
                 test_dirs = os.listdir(testPath + '/vol/')
                 one_pred_or_label = one_label_and_pred = 0
 
@@ -125,7 +125,7 @@ def FCNX_run():
                     one_label_and_pred = one_label_and_pred + np.count_nonzero(intersection)
 
                 meanIOU = one_label_and_pred / (one_pred_or_label + 1e-4)
-                print(meanIOU)
+                print('valid meanIOU', meanIOU)
             #------------------------------------------------------------------------------------------------------------------------------
 
             feed = {LRate: LEARNING_RATE, iou: meanIOU, image: vol_batch, annotation: seg_batch, bn_flag: True, keep_prob: 0.8, train_batchsize: TRAIN_BATCHSIZE}

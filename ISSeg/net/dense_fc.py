@@ -85,7 +85,6 @@ def transition_layer(in_put, keep_prob, BN_FLAG, reduction= 0.5,name = 'down_lay
         out_channel = round(in_channel * reduction)
         res = BN_Relu_Conv(in_put, out_channel, keep_prob, BN_FLAG, kernel_size=1, name= name)
         res = pool2d_layer(res, ksize = 2, stride= 2)
-
         return res
 
 def up_layer(skip_conn, block_to_up, kernel_size, stride, name= 'up_layer'):
