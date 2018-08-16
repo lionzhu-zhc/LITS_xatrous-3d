@@ -5,7 +5,7 @@ Lionzhu-list 2018-07-27
 
 import tensorflow as tf
 
-NUMPOOL = 4
+NUMPOOL = 2
 FIRST_LAYER_FILTERS = 48
 GROWTH_RATE = 12
 LAYERS_PER_BLOCK = [5] * (2 * NUMPOOL + 1)
@@ -13,7 +13,8 @@ LAYERS_PER_BLOCK = [5] * (2 * NUMPOOL + 1)
 def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL, keep_prob):
     print(tensor_in.get_shape())
     # the first conv layer
-    stack = conv2d_layer(kernel_size= 3, in_put= tensor_in, in_channel= IMGCHANNEL, out_channel= FIRST_LAYER_FILTERS, name= 'First_Conv')
+    stack = BN_Relu_Conv(in_put= tensor_in, out_channel= FIRST_LAYER_FILTERS, 
+                        keep_prob= 0.8, BN_FLAG= BN_FLAG, kernel_size= 3, name= 'First_Conv')
 
     n_filters = FIRST_LAYER_FILTERS
 
@@ -23,11 +24,10 @@ def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL, keep_pro
     for i in range(NUMPOOL):
         for j in range(LAYERS_PER_BLOCK[i]):
             # here ignore the bottle layer of the ori densenet
-            l = BN_Relu_Conv(stack, GROWTH_RATE, keep_prob= 0.8, BN_FLAG= BN_FLAG, kernel_size= 3, name= 'DownConv_{}_{}'.format(i,j))
+            l = bottleneck_layer(stack, keep_prob= 0.8, BN_FLAG= BN_FLAG, name= 'DownConv_{}_{}'.format(i,j))
             stack = tf.concat([stack, l], axis =3, name= 'Concat')
-            n_filters = n_filters + GROWTH_RATE
         skip_list.append(stack)
-        stack = down_layer(stack, n_filters, keep_prob= 0.8, BN_FLAG= BN_FLAG, name= 'Down_{}'.format(i))
+        stack = transition_layer(stack, keep_prob= 0.8, BN_FLAG= BN_FLAG, reduction= 0.5, name= 'Down_{}'.format(i))
 
     skip_list = skip_list[::-1]       # reverse the order of features
 
@@ -36,19 +36,18 @@ def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL, keep_pro
     # the middle denseblock
 
     for j in range (LAYERS_PER_BLOCK[NUMPOOL]):
-        l = BN_Relu_Conv(stack, GROWTH_RATE, keep_prob= 0.8, BN_FLAG= BN_FLAG, kernel_size= 3, name='MConv_{}'.format(j))
+        l = bottleneck_layer(stack, keep_prob= 0.8, BN_FLAG= BN_FLAG, name='MConv_{}'.format(j))
         block_to_up.append(l)
         stack = tf.concat([stack, l], axis= 3, name= 'Concat')
 
     #-------------------up scale layers-----------------------------------------------------------
     for i in range(NUMPOOL):
-        n_filters_keep = GROWTH_RATE * LAYERS_PER_BLOCK[NUMPOOL + i]
-        stack = up_layer(skip_list[i], block_to_up, n_filters_keep, kernel_size= 3, stride= 2, name= 'Up_{}'.format(i))
+        stack = up_layer(skip_list[i], block_to_up, kernel_size= 3, stride= 2, name= 'Up_{}'.format(i))
 
         block_to_up = []
 
         for j in range(LAYERS_PER_BLOCK[NUMPOOL + i + 1]):
-            l =BN_Relu_Conv(stack, GROWTH_RATE, keep_prob= 0.8, BN_FLAG= BN_FLAG, kernel_size= 3, name= 'UpConv_{}_{}'.format(i,j))
+            l =bottleneck_layer(stack, keep_prob= 0.8, BN_FLAG= BN_FLAG, name= 'UpConv_{}_{}'.format(i,j))
             block_to_up.append(l)
             stack = tf.concat([stack, l], axis= 3, name = 'Concat')
 
@@ -71,29 +70,37 @@ def BN_Relu_Conv(in_put, out_channel, keep_prob, BN_FLAG, kernel_size = 3, name 
         res = conv2d_layer(kernel_size, res, in_channel, out_channel, keep_prob= keep_prob, name= name)
         return res
 
-def down_layer(in_put, out_channel, keep_prob, BN_FLAG, name = 'down_layer'):
+def bottleneck_layer(in_put, keep_prob, BN_FLAG, name = 'bottleneck'):
     with tf.variable_scope(name):
         shap = in_put.get_shape()
         in_channel = shap[-1]
+        res = BN_Relu_Conv(in_put, 4*GROWTH_RATE, keep_prob, BN_FLAG, kernel_size= 1, name= 'Kernel_1')
+        res = BN_Relu_Conv(res, GROWTH_RATE, keep_prob, BN_FLAG, kernel_size= 3, name= 'Kernel_3')
+        return res
+
+def transition_layer(in_put, keep_prob, BN_FLAG, reduction= 0.5,name = 'down_layer'):
+    with tf.variable_scope(name):
+        shap = in_put.get_shape().as_list()
+        in_channel = shap[-1]
+        out_channel = round(in_channel * reduction)
         res = BN_Relu_Conv(in_put, out_channel, keep_prob, BN_FLAG, kernel_size=1, name= name)
         res = pool2d_layer(res, ksize = 2, stride= 2)
 
         return res
 
-def up_layer(skip_conn, block_to_up, n_filters_keep, kernel_size, stride, name= 'up_layer'):
+def up_layer(skip_conn, block_to_up, kernel_size, stride, name= 'up_layer'):
     '''
     perform upscale on block_to_up by factor 2 and concat it with skip_conn
     :param skip_conn:
     :param block_to_up: to upsample
-    :param n_filters_keep:
     :return:
     '''
 
     l = tf.concat(block_to_up, axis= 3, name= 'Concat')
     shap = l.get_shape().as_list()
     in_channel = shap[3]
-    out_channel = n_filters_keep
-    out_shape = tf.convert_to_tensor(list([shap[0], 2*shap[1], 2*shap[2], shap[3]]))
+    out_channel = in_channel * 2
+    out_shape = tf.convert_to_tensor(list([shap[0], 2*shap[1], 2*shap[2], out_channel]))
     with tf.variable_scope(name):
         deconv_weights, deconv_bias = get_var_transpose(kernel_size, in_channel, out_channel, name)
         l = tf.nn.conv2d_transpose(l, deconv_weights, out_shape, strides= [1, stride, stride, 1], padding= 'SAME')

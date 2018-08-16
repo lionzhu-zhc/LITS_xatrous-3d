@@ -1,112 +1,92 @@
+
+#------------------------------------------------------------------------------------------------------------------------------------------
+#----------------------------for sun-------------------------------------------------------------------------------------------------------
+# from pyexcel_xlsx import get_data
+# from pyexcel_xlsx import save_data
+# from collections import OrderedDict
+#
+# THISYEAR = 2018
+# THISMONTH = 8
+# THISDAY = 15
+# path = 'D:/中医院上半年整理.xlsx'
+# dstpath = 'D:/中医院上半年整理-xiugai.xlsx'
+#
+#
+# xls_data = get_data(path)
+# sheet_1 = xls_data['Sheet1']  # type:list
+#
+# length = len(sheet_1)
+# name_col = sheet_1[0].index('姓名')
+# ID_col = sheet_1[0].index('身份证号')
+# birth_col = sheet_1[0].index('出生日期')
+# gender_col = sheet_1[0].index('性别')
+# age_col = sheet_1[0].index('年龄')
+#
+# for i in range(1, length):
+#     info = sheet_1[i]
+#     ID = info[ID_col]
+#     ID = ''.join(ID.split())
+#     if ID != '' and len(ID) == 18:
+#         birth_year = int(ID[6:10])
+#         birth_mon = int(ID[10:12])
+#         birth_day = int(ID[12:14])
+#         geder_mark = int(ID[16])
+#         age = THISYEAR - birth_year
+#         if birth_mon < THISMONTH:
+#             age = str(age)
+#         elif birth_mon == THISMONTH and birth_day < THISDAY:
+#             age =  str(age)
+#         else:
+#             age = str(age-1)
+#         birth_date = str(birth_year) + '-' + str(birth_mon) + '-' + str(birth_day)
+#         info[birth_col] = birth_date
+#         info[age_col] = age
+#         if (geder_mark % 2 == 0):
+#             info[gender_col] = '女'
+#         else:
+#             info[gender_col] = '男'
+#     else:
+#         print("身份证号不正确:", (i+1), info[name_col])
+# save_data(dstpath, xls_data)
+#
+# print('ok')
+
+#------------------------------------------------------------------------------------------------------------------------------------------
+
+
+import tensorflow as tf
+
+x1 = tf.constant(1.0, shape=[1, 3, 3, 1])
+
+x2 = tf.constant(1.0, shape=[1, 6, 6, 3])
+
+x3 = tf.constant(1.0, shape=[1, 5, 5, 3])
+
+kernel = tf.constant(1.0, shape=[3, 3, 3, 1])
+
+y1 = tf.nn.conv2d_transpose(x1, kernel, output_shape=[1, 6, 6, 3],
+                            strides=[1, 2, 2, 1], padding="SAME")
+
+y2 = tf.nn.conv2d(x3, kernel, strides=[1, 2, 2, 1], padding="SAME")
+
+y3 = tf.nn.conv2d_transpose(y2, kernel, output_shape=[1, 5, 5, 3],
+                            strides=[1, 2, 2, 1], padding="SAME")
+
+y4 = tf.nn.conv2d(x2, kernel, strides=[1, 2, 2, 1], padding="SAME")
+
 '''
-read the mats from All folder
-and prepare the training and test set
-Lionzhu-list 20180726
+Wrong!!This is impossible
+y5 = tf.nn.conv2d_transpose(x1,kernel,output_shape=[1,10,10,3],strides=[1,2,2,1],padding="SAME")
 '''
-
-import os
-import numpy as np
-import random
-import scipy.io as sio
-from PIL import Image
-import cv2
-import nibabel as nib
-
-dataPath = 'E:/ISSEG/Dataset/2018REGROUP/all'
-cases = os.listdir(os.path.join(dataPath, 'vol_case'))
-random.shuffle(cases)
-
-def zscore(x):
-    xshape = x.shape
-    x_zs = np.zeros_like(x)
-    for i in range (xshape[2]):
-        sliceMean = np.mean(x[..., i])
-        sliceStd = np.std(x[..., i]) + 1e-5
-        slice = (x[..., i] - sliceMean) / sliceStd
-        x_zs[..., i] = slice
-    return x_zs
-
-def aug(data, mode):
-    shap = data.shape
-    dx = dy = 30
-    for m in mode:
-        if m == 'mirror':
-            mir = np.zeros_like(data)
-            for i in range(shap[2]):
-                mir[..., i] = np.fliplr(data[..., i])
-        if m == 'rot90':
-            rot90 = np.zeros_like(data)
-            for i in range(shap[2]):
-                rot90[..., i] = np.rot90(data[..., i])
-        if m == 'rot-90':
-            rot_90 = np.zeros_like(data)
-            for i in range(shap[2]):
-                rot_90[..., i] = np.rot90(data[..., i], 3)
-        if m == 'trans':
-            trans_1 = np.zeros_like(data)
-            T_1 = np.float32([[1,0,dx], [0,1,dy]])
-            trans_2 = np.zeros_like(data)
-            T_2 = np.float32([[1, 0, -dx], [0, 1, -dy]])
-            for i in range(shap[2]):
-                trans_1[..., i] = cv2.warpAffine(data[..., i], T_1, (shap[0], shap[0]))
-                trans_2[..., i] = cv2.warpAffine(data[..., i], T_2, (shap[0], shap[0]))
-    return  mir, rot90, rot_90, trans_1, trans_2
-
-
-def prepareTrain(augFlag):
-    for i in range(3):
-        print(cases[i])
-        volPath = os.path.join(dataPath, 'vol_case', cases[i])
-        segPath = os.path.join(dataPath, 'seg_case', cases[i])
-        vols = os.listdir(volPath)
-        segs = os.listdir(segPath)
-        for f in vols:
-            vol = sio.loadmat(os.path.join(volPath, f))
-            volData = vol['vol']
-            volData_zs = (volData)
-            seg = sio.loadmat(os.path.join(segPath, f))
-            segData = seg['seg']
-            dstVolPath = os.path.join(dataPath, 'train', 'vol')
-            if not os.path.exists(dstVolPath):
-                os.mkdir(dstVolPath)
-            dstSegPath = os.path.join(dataPath, 'train', 'seg')
-            if not os.path.exists(dstSegPath):
-                os.mkdir(dstSegPath)
-
-
-            img = nib.Nifti1Image(volData_zs, np.eye(4))
-            segg = nib.Nifti1Image(segData, np.eye(4))
-            nib.save(img, os.path.join(dstVolPath, cases[i]+'_'+f[:-4]+'_ori.nii'))
-            nib.save(segg, os.path.join(dstSegPath, cases[i] + '_' + f[:-4] + '_ori.nii'))
-
-            # if AUGMENTATION
-            if augFlag:
-                mode = ['mirror', 'rot90', 'rot-90', 'trans']
-                v_mir, v_rot90, v_rot_90, v_trans1, v_trans2 = aug(volData_zs, mode)
-                segData = np.expand_dims(segData, axis= 2)
-                s_mir, s_rot90, s_rot_90, s_trans1, s_trans2 = aug(segData, mode)
-                s_mir = np.squeeze(s_mir)
-                s_rot90 = np.squeeze(s_rot90)
-                s_rot_90 = np.squeeze(s_rot_90)
-                s_trans1 = np.squeeze(s_trans1)
-                s_trans2 = np.squeeze(s_trans2)
-
-                img_mir = nib.Nifti1Image(v_mir, np.eye(4) )
-                seg_mir = nib.Nifti1Image(s_mir, np.eye(4))
-                img_trans = nib.Nifti1Image(v_trans1, np.eye(4))
-                seg_trans = nib.Nifti1Image(s_trans1, np.eye(4))
-                nib.save(img_mir, os.path.join(dstVolPath, cases[i] + '_' + f[:-4] + '_mir.nii'))
-                nib.save(seg_mir, os.path.join(dstSegPath, cases[i] + '_' + f[:-4] + '_mir.nii'))
-                nib.save(img_trans, os.path.join(dstVolPath, cases[i] + '_' + f[:-4] + '_trans.nii'))
-                nib.save(seg_trans, os.path.join(dstSegPath, cases[i] + '_' + f[:-4] + '_trans.nii'))
+sess = tf.Session()
+tf.global_variables_initializer().run(session=sess)
+x1_decov, x3_cov, y2_decov, x2_cov = sess.run([y1, y2, y3, y4])
+print(x1_decov.shape)
+print(x3_cov.shape)
+print(y2_decov.shape)
+print(x2_cov.shape)
 
 
 
 
-if __name__ == '__main__':
-    augFlag = True
-    print('prepare train......')
-    prepareTrain(augFlag)
 
-
-print('ok')

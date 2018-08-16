@@ -18,7 +18,7 @@ trainPath = 'E:/ISSEG/Dataset/2018REGROUP/all/train/'
 testPath = 'E:/ISSEG/Dataset/2018REGROUP/all/test/'
 
 #change dir here ..............................................................
-resultPath = 'D:/IESLES_Rst/CT_256/exp5/'
+resultPath = 'D:/IESLES_Rst/CT_256/exp6/'
 
 IMAGE_WIDTH = 256
 IMAGE_HEIGHT = 256
@@ -28,7 +28,7 @@ IMAGE_CHANNEL = 5
 
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4
-MAX_ITERATION = 50000
+MAX_ITERATION = 10
 ITER_PER_EPOCH = 2100
 STEPINTERVAL = 50000
 CLASSNUM = 2
@@ -89,7 +89,7 @@ def FCNX_run():
         print('Begin training:{}'.format(datetime.datetime.now()))
 
         merge_op = tf.summary.merge_all()
-        writer = tf.summary.FileWriter(resultPath + '/log', sess.graph)
+        train_writer = tf.summary.FileWriter(resultPath + '/log', sess.graph)
         sess.run(tf.global_variables_initializer())
         scope.reuse_variables()
         saver = tf.train.Saver()
@@ -133,7 +133,7 @@ def FCNX_run():
             train_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=feed)
             print(itr, vol_batch.shape)
             print('loss:', train_loss_print)
-            writer.add_summary(summary_str, itr)
+            train_writer.add_summary(summary_str, itr)
 
             if (itr + 1) % STEPINTERVAL == 0:
                 saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1))
@@ -150,8 +150,8 @@ def FCNX_run():
                     test_pred_annotation = sess.run([pred_annot], feed_dict=test_feed)
                     label_batch = np.squeeze(seg_batch)
                     pred_batch = np.squeeze(test_pred_annotation)
-                    label_tosave = np.rot90(label_batch, 3).astype(np.uint8)
-                    pred_tosave = np.rot90(pred_batch, 3).astype(np.uint8)
+                    label_tosave = np.rot90(label_batch, 1).astype(np.uint8)
+                    pred_tosave = np.rot90(pred_batch, 1).astype(np.uint8)
                     label_tosave = np.fliplr(label_tosave)
                     pred_tosave = np.fliplr(pred_tosave)
 
