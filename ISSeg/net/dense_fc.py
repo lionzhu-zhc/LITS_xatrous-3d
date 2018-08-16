@@ -63,7 +63,7 @@ def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL, keep_pro
 
 def BN_Relu_Conv(in_put, out_channel, keep_prob, BN_FLAG, kernel_size = 3, name = 'BN_Relu_Conv'):
     with tf.variable_scope(name):
-        shap = in_put.get_shape()
+        shap = in_put.get_shape().as_list()
         in_channel = shap[-1]
         res = tf.layers.batch_normalization(in_put, momentum= 0.9, training= BN_FLAG, name= 'BatchNorm')
         res = tf.nn.relu(res)
@@ -72,7 +72,7 @@ def BN_Relu_Conv(in_put, out_channel, keep_prob, BN_FLAG, kernel_size = 3, name 
 
 def bottleneck_layer(in_put, keep_prob, BN_FLAG, name = 'bottleneck'):
     with tf.variable_scope(name):
-        shap = in_put.get_shape()
+        shap = in_put.get_shape().as_list()
         in_channel = shap[-1]
         res = BN_Relu_Conv(in_put, 4*GROWTH_RATE, keep_prob, BN_FLAG, kernel_size= 1, name= 'Kernel_1')
         res = BN_Relu_Conv(res, GROWTH_RATE, keep_prob, BN_FLAG, kernel_size= 3, name= 'Kernel_3')
