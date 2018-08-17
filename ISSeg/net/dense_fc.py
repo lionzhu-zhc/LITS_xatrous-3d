@@ -22,13 +22,11 @@ def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL, keep_pro
 
     #--------------------down scale layers--------------------------------------------------------
     for i in range(NUMPOOL):
-        for j in range(LAYERS_PER_BLOCK[i]):
-            # here ignore the bottle layer of the ori densenet
-            l = bottleneck_layer(stack, keep_prob= 0.8, BN_FLAG= BN_FLAG, name= 'DownConv_{}_{}'.format(i,j))
-            stack = tf.concat([stack, l], axis =3, name= 'Concat')
-        skip_list.append(stack)
-        stack = transition_layer(stack, keep_prob= 0.8, BN_FLAG= BN_FLAG, reduction= 0.5, name= 'Down_{}'.format(i))
-
+        dense_res = dense_block(stack, LAYERS_PER_BLOCK[i], keep_prob= keep_prob, 
+                                BN_FLAG= BN_FLAG, name= 'DenseBlock_{}'.format(i))
+        stack = transition_layer(dense_res, keep_prob= keep_prob, BN_FLAG= BN_FLAG, 
+                                name= 'Down_{}'.format(i))
+        skip_list.append[stack]
     skip_list = skip_list[::-1]       # reverse the order of features
 
     block_to_up = []
@@ -77,6 +75,23 @@ def bottleneck_layer(in_put, keep_prob, BN_FLAG, name = 'bottleneck'):
         res = BN_Relu_Conv(in_put, 4*GROWTH_RATE, keep_prob, BN_FLAG, kernel_size= 1, name= 'Kernel_1')
         res = BN_Relu_Conv(res, GROWTH_RATE, keep_prob, BN_FLAG, kernel_size= 3, name= 'Kernel_3')
         return res
+
+def dense_block(in_put, n_layers, keep_prob, BN_FLAG, name= 'denseblock'):
+    with tf.variable_scope(name):
+        layer_concat = list()
+        layer_concat.append(in_put)
+
+        res = bottleneck_layer(in_put, keep_prob, BN_FLAG, name= 'Bottle_0'
+        layer_concat.append(res)
+
+        for i in range (n_layers - 1):
+            res = tf.concat(layer_concat, axis= 3, name= 'concat')
+            res = bottleneck_layer(res, BN_FLAG, keep_prob, name= 'Bottle_{}'.format(i+1))
+            layer_concat.append(res)
+
+        res = tf.concat(layer_concat, axis= 3, name= 'concat')
+        return res
+
 
 def transition_layer(in_put, keep_prob, BN_FLAG, reduction= 0.5,name = 'down_layer'):
     with tf.variable_scope(name):
@@ -151,21 +166,7 @@ def get_var_transpose(kernel_size, in_channel, out_channel, name= None):
 #         res = tf.nn.dropout(res, keep_prob)
 #         return res
 #
-# def dense_block(in_put, n_layers, growth_rate, BN_FLAG, keep_prob, name):
-#     with tf.variable_scope(name):
-#         layer_concat = list()
-#         layer_concat.append(in_put)
-#
-#         res = bottleneck_layer(in_put, growth_rate, BN_FLAG, keep_prob, name= 'Bottle')
-#         layer_concat.append(res)
-#
-#         for i in range (n_layers - 1):
-#             res = tf.concat(layer_concat, axis= 3, name= 'concat')
-#             res = bottleneck_layer(res, growth_rate, BN_FLAG, keep_prob, name= 'Bottle')
-#             layer_concat.append(res)
-#
-#         res = tf.concat(layer_concat, axis= 3, name= 'concat')
-#         return res
+
 
 # def up_layer(in_put, out_shape, in_channel, out_channel, kernel_size, stride, c_rate= 1, name= 'up_layer'):
 #     with tf.variable_scope(name):
