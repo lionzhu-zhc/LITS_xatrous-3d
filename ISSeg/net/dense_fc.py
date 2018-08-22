@@ -6,12 +6,12 @@ Lionzhu-list 2018-07-27
 import tensorflow as tf
 
 NUMPOOL = 2
-FIRST_LAYER_FILTERS = 48
-GROWTH_RATE = 12
+FIRST_LAYER_FILTERS = 32
+GROWTH_RATE = 24
 LAYERS_PER_BLOCK = [5] * (2 * NUMPOOL + 1)
 
 def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL, keep_prob):
-    print(tensor_in.get_shape())
+    print('tensor_in shape', tensor_in.get_shape())
     # the first conv layer
     stack = BN_Relu_Conv(in_put= tensor_in, out_channel= FIRST_LAYER_FILTERS, 
                         keep_prob= 0.8, BN_FLAG= BN_FLAG, kernel_size= 3, name= 'First_Conv')
@@ -23,31 +23,24 @@ def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, IMGCHANNEL, keep_pro
     #--------------------down scale layers--------------------------------------------------------
     for i in range(NUMPOOL):
         dense_res = dense_block(stack, LAYERS_PER_BLOCK[i], keep_prob= keep_prob, 
-                                BN_FLAG= BN_FLAG, name= 'DenseBlock_{}'.format(i))
+                                BN_FLAG= BN_FLAG, name= 'DownDense_{}'.format(i))
+        #dense_res = tf.concat([dense_res, stack], axis= 3, name= 'Concat')
+        skip_list.append(dense_res)
         stack = transition_layer(dense_res, keep_prob= keep_prob, BN_FLAG= BN_FLAG, 
-                                name= 'Down_{}'.format(i))
-        skip_list.append[stack]
+                                reduction= 0.5, name= 'Down_{}'.format(i))
+
     skip_list = skip_list[::-1]       # reverse the order of features
 
-    block_to_up = []
-
     # the middle denseblock
-
-    for j in range (LAYERS_PER_BLOCK[NUMPOOL]):
-        l = bottleneck_layer(stack, keep_prob= 0.8, BN_FLAG= BN_FLAG, name='MConv_{}'.format(j))
-        block_to_up.append(l)
-        stack = tf.concat([stack, l], axis= 3, name= 'Concat')
+    stack = dense_block(stack, LAYERS_PER_BLOCK[NUMPOOL], keep_prob= keep_prob,
+                        BN_FLAG= BN_FLAG, name= 'Middle_denseblock')
 
     #-------------------up scale layers-----------------------------------------------------------
     for i in range(NUMPOOL):
-        stack = up_layer(skip_list[i], block_to_up, kernel_size= 3, stride= 2, name= 'Up_{}'.format(i))
-
-        block_to_up = []
-
-        for j in range(LAYERS_PER_BLOCK[NUMPOOL + i + 1]):
-            l =bottleneck_layer(stack, keep_prob= 0.8, BN_FLAG= BN_FLAG, name= 'UpConv_{}_{}'.format(i,j))
-            block_to_up.append(l)
-            stack = tf.concat([stack, l], axis= 3, name = 'Concat')
+        stack = up_layer(stack, kernel_size= 3, stride= 2, name= 'Up_{}'.format(i))
+        stack = tf.concat([stack, skip_list[i]], axis= 3, name= 'Concat')
+        stack = dense_block(stack, LAYERS_PER_BLOCK[NUMPOOL+i+1], keep_prob= keep_prob,
+                                BN_FLAG= BN_FLAG, name= 'UpDense_{}'.format(i))
 
     #----------------------the last 1x1 conv layer-----------------------------------------------
     conv = BN_Relu_Conv(stack, out_channel= CLASSNUM, keep_prob= 0.8, BN_FLAG= BN_FLAG, kernel_size= 1, name= 'LastConv')
@@ -72,21 +65,22 @@ def bottleneck_layer(in_put, keep_prob, BN_FLAG, name = 'bottleneck'):
     with tf.variable_scope(name):
         shap = in_put.get_shape().as_list()
         in_channel = shap[-1]
-        res = BN_Relu_Conv(in_put, 4*GROWTH_RATE, keep_prob, BN_FLAG, kernel_size= 1, name= 'Kernel_1')
-        res = BN_Relu_Conv(res, GROWTH_RATE, keep_prob, BN_FLAG, kernel_size= 3, name= 'Kernel_3')
+        #res = BN_Relu_Conv(in_put, 4*GROWTH_RATE, keep_prob, BN_FLAG, kernel_size= 1, name= 'Kernel_1')
+        res = BN_Relu_Conv(in_put, GROWTH_RATE, keep_prob, BN_FLAG, kernel_size= 3, name= 'Kernel_3')
         return res
 
 def dense_block(in_put, n_layers, keep_prob, BN_FLAG, name= 'denseblock'):
     with tf.variable_scope(name):
+        in_put = BN_Relu_Conv(in_put, out_channel= 64, keep_prob= 0.8, BN_FLAG= BN_FLAG, kernel_size= 1, name= 'BottleBeforeDense')
         layer_concat = list()
         layer_concat.append(in_put)
 
-        res = bottleneck_layer(in_put, keep_prob, BN_FLAG, name= 'Bottle_0'
+        res = bottleneck_layer(in_put, keep_prob, BN_FLAG, name= 'Bottle_0')
         layer_concat.append(res)
 
         for i in range (n_layers - 1):
             res = tf.concat(layer_concat, axis= 3, name= 'concat')
-            res = bottleneck_layer(res, BN_FLAG, keep_prob, name= 'Bottle_{}'.format(i+1))
+            res = bottleneck_layer(res, keep_prob, BN_FLAG, name= 'Bottle_{}'.format(i+1))
             layer_concat.append(res)
 
         res = tf.concat(layer_concat, axis= 3, name= 'concat')
@@ -102,25 +96,21 @@ def transition_layer(in_put, keep_prob, BN_FLAG, reduction= 0.5,name = 'down_lay
         res = pool2d_layer(res, ksize = 2, stride= 2)
         return res
 
-def up_layer(skip_conn, block_to_up, kernel_size, stride, name= 'up_layer'):
+def up_layer(skip_conn, kernel_size, stride, name= 'up_layer'):
     '''
     perform upscale on block_to_up by factor 2 and concat it with skip_conn
-    :param skip_conn:
-    :param block_to_up: to upsample
+    :param skip_conn
     :return:
     '''
 
-    l = tf.concat(block_to_up, axis= 3, name= 'Concat')
-    shap = l.get_shape().as_list()
+    shap = skip_conn.get_shape().as_list()
     in_channel = shap[3]
-    out_channel = in_channel * 2
+    out_channel = in_channel
     out_shape = tf.convert_to_tensor(list([shap[0], 2*shap[1], 2*shap[2], out_channel]))
     with tf.variable_scope(name):
         deconv_weights, deconv_bias = get_var_transpose(kernel_size, in_channel, out_channel, name)
-        l = tf.nn.conv2d_transpose(l, deconv_weights, out_shape, strides= [1, stride, stride, 1], padding= 'SAME')
+        l = tf.nn.conv2d_transpose(skip_conn, deconv_weights, out_shape, strides= [1, stride, stride, 1], padding= 'SAME')
         l = tf.nn.bias_add(l, deconv_bias)
-        l = tf.concat([l, skip_conn], axis= 3, name= 'Concat')
-
     return l
 
 def conv2d_layer(kernel_size, in_put, in_channel, out_channel, c_stride = 1, c_rate = 1, keep_prob = 0.8, name = None):

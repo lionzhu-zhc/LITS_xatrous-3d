@@ -3,8 +3,8 @@
 '''
 
 
-import net.UNet_2D as UNet_2D
-import net.NetDeepLab_2d as NetDeepLab_2d
+#import net.UNet_2D as UNet_2D
+#import net.NetDeepLab_2d as NetDeepLab_2d
 import net.dense_fc as dense_fc
 import utils.utils_fun as utils
 import net.LossPy as LossPy
@@ -25,14 +25,13 @@ IMAGE_HEIGHT = 256
 IMAGE_CHANNEL = 5
 #IMAGE_DEPTH = 24
 
-
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4
 MAX_ITERATION = 10
 ITER_PER_EPOCH = 2100
 STEPINTERVAL = 50000
 CLASSNUM = 2
-TRAIN_BATCHSIZE = 1
+TRAIN_BATCHSIZE = 2
 
 
 def training(lr, loss_val, va_list):
