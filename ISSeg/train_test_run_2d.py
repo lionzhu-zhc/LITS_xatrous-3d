@@ -12,6 +12,7 @@ import os
 import tensorflow as tf
 import numpy as np
 import datetime
+import math
 
 
 trainPath = 'E:/ISSEG/Dataset/2018REGROUP/all/train/'
@@ -140,25 +141,30 @@ def FCNX_run():
             if itr == (MAX_ITERATION - 1):
                 print('End training:{}'.format(datetime.datetime.now()))
                 test_dirs = os.listdir(testPath + '/vol/')
-                for tDir in test_dirs:
-                    vol_batch, seg_batch = utils.get_data_test_2d(testPath, tDir)
-                    vol_shape = vol_batch.shape
-                    print(vol_shape)
+                test_num = len(test_dirs)
+                test_times = math.ceil(test_num / TRAIN_BATCHSIZE)
+                for i in range(test_times):
+                    if i != (test_times - 1):
+                        tDir = test_dirs[i * TRAIN_BATCHSIZE : (i+1) * TRAIN_BATCHSIZE]
+                        vol_batch, seg_batch = utils.get_data_test_2d(testPath, tDir, TRAIN_BATCHSIZE)
+                    if i == (test_times - 1):
+                        tDir = test_dirs[(test_num-TRAIN_BATCHSIZE) : test_num]
+                        vol_batch, seg_batch = utils.get_data_test_2d(testPath, tDir, TRAIN_BATCHSIZE)
+                    test_feed = {image: vol_batch, annotation: seg_batch,bn_flag: False, keep_prob:1, train_batchsize: TRAIN_BATCHSIZE}
+                    test_pred_annotation = sess.run([pred_annot], feed_dict=test_feed) 
+                    for j in range(TRAIN_BATCHSIZE):
+                        label_batch = np.squeeze(seg_batch[j,...])
+                        pred_batch = np.squeeze(test_pred_annotation[j,... ]) 
+                        label_tosave = np.rot90(label_batch, 1).astype(np.uint8)
+                        pred_tosave = np.rot90(pred_batch, 1).astype(np.uint8)
+                        label_tosave = np.fliplr(label_tosave)
+                        pred_tosave = np.fliplr(pred_tosave)  
 
-                    test_feed = {image: vol_batch, annotation: seg_batch,bn_flag: False, keep_prob:1, train_batchsize: 1}
-                    test_pred_annotation = sess.run([pred_annot], feed_dict=test_feed)
-                    label_batch = np.squeeze(seg_batch)
-                    pred_batch = np.squeeze(test_pred_annotation)
-                    label_tosave = np.rot90(label_batch, 1).astype(np.uint8)
-                    pred_tosave = np.rot90(pred_batch, 1).astype(np.uint8)
-                    label_tosave = np.fliplr(label_tosave)
-                    pred_tosave = np.fliplr(pred_tosave)
-
-                    namePre = tDir[:-4]
-                    print("test_itr:", namePre)
-                    utils.save_imgs_IELES_2d(resultPath, namePre, label_tosave, pred_tosave)
-                    utils.save_npys(resultPath, namePre, label_tosave, pred_tosave)
-
+                        namePre = tDir[j]
+                        namePre = namePre[:-4]
+                        print("test_itr:", namePre)
+                        utils.save_imgs_IELES_2d(resultPath, namePre, label_tosave, pred_tosave)
+                        utils.save_npys(resultPath, namePre, label_tosave, pred_tosave)
 
 
 

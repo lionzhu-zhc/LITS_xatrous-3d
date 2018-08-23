@@ -4,6 +4,7 @@ import tensorflow as tf
 import os
 import scipy.misc as smc
 
+#-----------------------for 3D data read and save-----------------------------------------
 def get_data_train(trainPath, batchsize):
     vol_batch = []
     seg_batch = []
@@ -33,32 +34,6 @@ def get_batch_train(trainPath):
     seg_batch.astype(np.int32)
     return vol_batch, seg_batch
 
-def get_data_train_2d(trainPath, batchsize):
-    vol_batch = []
-    seg_batch = []
-    for i in range(1, batchsize + 1):
-        if i == 1:
-            vol_batch, seg_batch = get_batch_train_2d(trainPath)
-        else:
-            vol_batch_tmp, seg_batch_tmp = get_batch_train_2d(trainPath)
-            vol_batch = np.concatenate((vol_batch, vol_batch_tmp), axis=0)
-            seg_batch = np.concatenate((seg_batch, seg_batch_tmp), axis=0)
-    return vol_batch, seg_batch
-
-def get_batch_train_2d(trainPath):
-    dirs_train = os.listdir(trainPath + 'vol/')
-    samples = random.choice(dirs_train)
-    #print(samples)
-    vol_batch = np.load(trainPath + 'vol/' + samples)
-    seg_batch = np.load(trainPath + 'seg/' + samples)
-    vol_batch = np.expand_dims(vol_batch, axis=0)
-    seg_batch = np.expand_dims(seg_batch, axis=0)
-    #vol_batch = np.expand_dims(vol_batch, axis=3)
-    seg_batch = np.expand_dims(seg_batch, axis=3)
-    vol_batch.astype(np.float32)
-    seg_batch.astype(np.int32)
-    return vol_batch, seg_batch
-
 def get_data_test(testPath, tDir):
     vol_batch = np.load(testPath + 'vol/' +tDir)
     seg_batch = np.load(testPath + 'seg/' +tDir)
@@ -71,17 +46,6 @@ def get_data_test(testPath, tDir):
     vol_batch.astype(np.float32)
     seg_batch.astype(np.int32)
     return vol_batch, seg_batch
-
-def get_data_test_2d(testPath, tDir):
-    vol_batch = np.load(testPath + 'vol/' + tDir)
-    seg_batch = np.load(testPath + 'seg/' + tDir)
-    vol_batch = np.expand_dims(vol_batch, axis=0)
-    seg_batch = np.expand_dims(seg_batch, axis=0)
-    #vol_batch = np.expand_dims(vol_batch, axis=3)
-    seg_batch = np.expand_dims(seg_batch, axis=3)
-    vol_batch.astype(np.float32)
-    seg_batch.astype(np.int32)
-    return vol_batch, seg_batch   # vol_shape [BWHC],[1,256,256,5]
 
 def save_imgs(resultPath, name_pre, label_batch, pred_batch):
     IMAGE_DEPTH = label_batch.shape[2]
@@ -134,12 +98,10 @@ def save_imgs(resultPath, name_pre, label_batch, pred_batch):
 
         pred_img_mat = np.transpose(pred_img_mat, [1, 2, 0])
 
-
         smc.toimage(label_img_mat, cmin=0.0, cmax=255).save(
             resultPath + 'imgs/' + str_split[0] + '/%d-mask.png' % (file_index + dept))
         smc.toimage(pred_img_mat, cmin=0.0, cmax=255).save(
             resultPath + 'imgs/' + str_split[0] + '/%d-pred.png' % (file_index + dept))
-
 
 def save_imgs_IELES(resultPath, name_pre, label_batch, pred_batch):
     IMAGE_DEPTH = label_batch.shape[2]
@@ -194,6 +156,55 @@ def save_imgs_IELES(resultPath, name_pre, label_batch, pred_batch):
             resultPath + 'imgs/' + str_split + '/%d-mask.png' % (dept))
         smc.toimage(pred_img_mat, cmin=0.0, cmax=255).save(
             resultPath + 'imgs/' + str_split + '/%d-pred.png' % (dept))
+
+#-----------------------for 2D data read and save------------------------------------------
+def get_data_train_2d(trainPath, batchsize):
+    vol_batch = []
+    seg_batch = []
+    for i in range(1, batchsize + 1):
+        if i == 1:
+            vol_batch, seg_batch = get_batch_train_2d(trainPath)
+        else:
+            vol_batch_tmp, seg_batch_tmp = get_batch_train_2d(trainPath)
+            vol_batch = np.concatenate((vol_batch, vol_batch_tmp), axis=0)
+            seg_batch = np.concatenate((seg_batch, seg_batch_tmp), axis=0)
+    return vol_batch, seg_batch
+
+def get_batch_train_2d(trainPath):
+    dirs_train = os.listdir(trainPath + 'vol/')
+    samples = random.choice(dirs_train)
+    #print(samples)
+    vol_batch = np.load(trainPath + 'vol/' + samples)
+    seg_batch = np.load(trainPath + 'seg/' + samples)
+    vol_batch = np.expand_dims(vol_batch, axis=0)
+    seg_batch = np.expand_dims(seg_batch, axis=0)
+    #vol_batch = np.expand_dims(vol_batch, axis=3)
+    seg_batch = np.expand_dims(seg_batch, axis=3)
+    vol_batch.astype(np.float32)
+    seg_batch.astype(np.int32)
+    return vol_batch, seg_batch
+
+def get_data_test_2d(testPath, tDir, batchsize):
+    vol_batch = []
+    seg_batch = []
+    for i in range(1, batchsize+1):
+        if i == 1:
+            vol_batch, seg_batch = get_batch_test_2d(testPath, tDir, i-1)
+        else:
+            vol_batch_tmp, seg_batch_tmp = get_batch_test_2d(testPath, tDir, i-1)
+            vol_batch = np.concatenate((vol_batch, vol_batch_tmp), axis = 0)
+            seg_batch = np.concatenate((seg_batch, seg_batch_tmp), axis = 0)
+    return vol_batch, seg_batch  # vol_shape [BWHC],[n,256,256,5]
+
+def get_batch_test_2d(testPath, tDir, ind):
+    vol_batch = np.load(testPath + 'vol/' + tDir[ind])
+    seg_batch = np.load(testPath + 'seg/' + tDir[ind])
+    vol_batch = np.expand_dims(vol_batch, axis = 0)
+    seg_batch = np.expand_dims(seg_batch, axis = 0)
+    seg_batch = np.expand_dims(seg_batch, axis = 3)
+    vol_batch.astype(np.float32)
+    seg_batch.astype(np.int32)
+    return vol_batch, seg_batch
 
 def save_imgs_IELES_2d(resultPath, name_pre, label_batch, pred_batch):
     IMAGE_DEPTH = 1
