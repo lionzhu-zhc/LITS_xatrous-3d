@@ -2,6 +2,7 @@
 preprocess ISLES2018 dataset
 80 case as training
 24 case as test
+the old version
 '''
 
 import numpy as np

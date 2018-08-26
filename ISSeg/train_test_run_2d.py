@@ -15,24 +15,25 @@ import datetime
 import math
 
 
-trainPath = 'E:/ISSEG/Dataset/2018REGROUP/all/train/'
-testPath = 'E:/ISSEG/Dataset/2018REGROUP/all/test/'
+trainPath = 'E:/ISSEG/Dataset/2018REGROUP/128/train/'
+testPath = 'E:/ISSEG/Dataset/2018REGROUP/128/test/'
 
 #change dir here ..............................................................
-resultPath = 'D:/IESLES_Rst/CT_256/exp6/'
+resultPath = 'D:/IESLES_Rst/CT_128/exp3/'
 
-IMAGE_WIDTH = 256
-IMAGE_HEIGHT = 256
+IMAGE_WIDTH = 128
+IMAGE_HEIGHT = 128
 IMAGE_CHANNEL = 5
 #IMAGE_DEPTH = 24
 
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4
-MAX_ITERATION = 10
-ITER_PER_EPOCH = 2100
-STEPINTERVAL = 50000
+DECAY_INTERVAL = 3000
+MAX_ITERATION = 40000
+ITER_PER_EPOCH = 300
+SAVE_CKPT_INTERVAL = 10000
 CLASSNUM = 2
-TRAIN_BATCHSIZE = 2
+TRAIN_BATCHSIZE = 12
 
 
 def training(lr, loss_val, va_list):
@@ -58,7 +59,7 @@ def FCNX_run():
     #                                              CLASSNUM = CLASSNUM, KEEPPROB = keep_prob, IMGCHANNEL = IMAGE_CHANNEL)
 
     logits, pred_annot = dense_fc.build_dense_fc(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
-                                                 CLASSNUM= CLASSNUM,  IMGCHANNEL= IMAGE_CHANNEL,keep_prob= keep_prob)
+                                                 CLASSNUM= CLASSNUM, keep_prob= keep_prob)
 
     with tf.variable_scope('loss'):
         class_weight = tf.constant([0.15,1])
@@ -106,26 +107,26 @@ def FCNX_run():
                 LEARNING_RATE = LEARNING_RATE * 0.90
                 print('learning_rate:',LEARNING_RATE)
             # -------------------------validation with IOU each 10 epoch------------------------------------------------------
-            if (itr + 1)% (ITER_PER_EPOCH * 5) == 0:
-                test_dirs = os.listdir(testPath + '/vol/')
-                one_pred_or_label = one_label_and_pred = 0
-
-                for t_dir in test_dirs:
-                    vol_batch, seg_batch = utils.get_data_test_2d(testPath, t_dir)
-                    test_feed = {image: vol_batch, annotation: seg_batch, bn_flag: False, keep_prob: 1,
-                                 train_batchsize: 1}
-                    test_pred_annotation = sess.run(pred_annot, feed_dict=test_feed)
-                    label_batch = np.squeeze(seg_batch).astype(np.uint8)
-                    pred_batch = np.squeeze(test_pred_annotation).astype(np.uint8)
-                    label_bool = (label_batch == 1)
-                    pred_bool = (pred_batch == 1)
-                    union = np.logical_or(label_bool, pred_bool)
-                    intersection = np.logical_and(label_bool, pred_bool)
-                    one_pred_or_label = one_pred_or_label + np.count_nonzero(union)
-                    one_label_and_pred = one_label_and_pred + np.count_nonzero(intersection)
-
-                meanIOU = one_label_and_pred / (one_pred_or_label + 1e-4)
-                print('valid meanIOU', meanIOU)
+            # if (itr + 1)% (ITER_PER_EPOCH * 5) == 0:
+            #     test_dirs = os.listdir(testPath + '/vol/')
+            #     one_pred_or_label = one_label_and_pred = 0
+            #
+            #     for t_dir in test_dirs:
+            #         vol_batch, seg_batch = utils.get_data_test_2d(testPath, t_dir)
+            #         test_feed = {image: vol_batch, annotation: seg_batch, bn_flag: False, keep_prob: 1,
+            #                      train_batchsize: 1}
+            #         test_pred_annotation = sess.run(pred_annot, feed_dict=test_feed)
+            #         label_batch = np.squeeze(seg_batch).astype(np.uint8)
+            #         pred_batch = np.squeeze(test_pred_annotation).astype(np.uint8)
+            #         label_bool = (label_batch == 1)
+            #         pred_bool = (pred_batch == 1)
+            #         union = np.logical_or(label_bool, pred_bool)
+            #         intersection = np.logical_and(label_bool, pred_bool)
+            #         one_pred_or_label = one_pred_or_label + np.count_nonzero(union)
+            #         one_label_and_pred = one_label_and_pred + np.count_nonzero(intersection)
+            #
+            #     meanIOU = one_label_and_pred / (one_pred_or_label + 1e-4)
+            #     print('valid meanIOU', meanIOU)
             #------------------------------------------------------------------------------------------------------------------------------
 
             feed = {LRate: LEARNING_RATE, iou: meanIOU, image: vol_batch, annotation: seg_batch, bn_flag: True, keep_prob: 0.8, train_batchsize: TRAIN_BATCHSIZE}
@@ -135,7 +136,7 @@ def FCNX_run():
             print('loss:', train_loss_print)
             train_writer.add_summary(summary_str, itr)
 
-            if (itr + 1) % STEPINTERVAL == 0:
+            if (itr + 1) % SAVE_CKPT_INTERVAL == 0:
                 saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1))
 #-------------------------------------Test Test Test Test-------------------------------------------------------------------------------
             if itr == (MAX_ITERATION - 1):
@@ -151,10 +152,10 @@ def FCNX_run():
                         tDir = test_dirs[(test_num-TRAIN_BATCHSIZE) : test_num]
                         vol_batch, seg_batch = utils.get_data_test_2d(testPath, tDir, TRAIN_BATCHSIZE)
                     test_feed = {image: vol_batch, annotation: seg_batch,bn_flag: False, keep_prob:1, train_batchsize: TRAIN_BATCHSIZE}
-                    test_pred_annotation = sess.run([pred_annot], feed_dict=test_feed) 
+                    test_pred_annotation = sess.run(pred_annot, feed_dict=test_feed)
                     for j in range(TRAIN_BATCHSIZE):
                         label_batch = np.squeeze(seg_batch[j,...])
-                        pred_batch = np.squeeze(test_pred_annotation[j,... ]) 
+                        pred_batch = np.squeeze(test_pred_annotation[j,...])
                         label_tosave = np.rot90(label_batch, 1).astype(np.uint8)
                         pred_tosave = np.rot90(pred_batch, 1).astype(np.uint8)
                         label_tosave = np.fliplr(label_tosave)

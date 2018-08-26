@@ -11,7 +11,7 @@ import scipy.io as sio
 from PIL import Image
 import cv2
 
-dataPath = 'E:/ISSEG/Dataset/2018REGROUP/all'
+dataPath = 'E:/ISSEG/Dataset/2018REGROUP/128'
 cases = os.listdir(os.path.join(dataPath, 'vol_case'))
 random.shuffle(cases)
 
@@ -42,12 +42,12 @@ def aug(data, mode):
                 rot_90[..., i] = np.rot90(data[..., i], 3)
         if m == 'trans':
             trans_1 = np.zeros_like(data)
-            dx = random.randint(-30, 30)
-            dy = random.randint(-30, 30)
+            dx = random.randint(-15, 15)
+            dy = random.randint(-15, 15)
             T_1 = np.float32([[1,0,dx], [0,1,dy]])
             trans_2 = np.zeros_like(data)
-            dx = random.randint(-30, 30)
-            dy = random.randint(-30, 30)
+            dx = random.randint(-15, 15)
+            dy = random.randint(-15, 15)
             T_2 = np.float32([[1, 0, -dx], [0, 1, -dy]])
             for i in range(shap[2]):
                 trans_1[..., i] = cv2.warpAffine(data[..., i], T_1, (shap[0], shap[0]))
@@ -56,7 +56,7 @@ def aug(data, mode):
 
 
 def prepareTrain(augFlag):
-    for i in range(60):
+    for i in range(70):
         print(cases[i])
         volPath = os.path.join(dataPath, 'vol_case', cases[i])
         segPath = os.path.join(dataPath, 'seg_case', cases[i])
@@ -104,7 +104,7 @@ def prepareTrain(augFlag):
 
 
 def prepareTest():
-    for i in range(60, len(cases)):
+    for i in range(70, len(cases)):
         print(cases[i])
         volPath = os.path.join(dataPath, 'vol_case', cases[i])
         segPath = os.path.join(dataPath, 'seg_case', cases[i])
