@@ -53,38 +53,24 @@
 
 #------------------------------------------------------------------------------------------------------------------------------------------
 
+import os
+import numpy as np
+import scipy.misc as smc
 
-import tensorflow as tf
+ori_path = 'E:/ISSEG/Dataset/2018REGROUP/128/1/'
+dirs = os.listdir(ori_path)
 
-x1 = tf.constant(1.0, shape=[1, 3, 3, 1])
+for i in range(6):
+    data = np.load(ori_path+dirs[i])
 
-x2 = tf.constant(1.0, shape=[1, 6, 6, 3])
+    img = np.zeros((128,128,3))
+    cord = np.where(data == 1)
+    img[cord[0], cord[1], 0] = 64
+    img[cord[0], cord[1], 1] = 0
+    img[cord[0], cord[1], 2] = 128
+    smc.toimage(img, cmin= 0, cmax= 255).save(ori_path + dirs[i][:-4] + '.jpg')
 
-x3 = tf.constant(1.0, shape=[1, 5, 5, 3])
 
-kernel = tf.constant(1.0, shape=[3, 3, 3, 1])
-
-y1 = tf.nn.conv2d_transpose(x1, kernel, output_shape=[1, 6, 6, 3],
-                            strides=[1, 2, 2, 1], padding="SAME")
-
-y2 = tf.nn.conv2d(x3, kernel, strides=[1, 2, 2, 1], padding="SAME")
-
-y3 = tf.nn.conv2d_transpose(y2, kernel, output_shape=[1, 5, 5, 3],
-                            strides=[1, 2, 2, 1], padding="SAME")
-
-y4 = tf.nn.conv2d(x2, kernel, strides=[1, 2, 2, 1], padding="SAME")
-
-'''
-Wrong!!This is impossible
-y5 = tf.nn.conv2d_transpose(x1,kernel,output_shape=[1,10,10,3],strides=[1,2,2,1],padding="SAME")
-'''
-sess = tf.Session()
-tf.global_variables_initializer().run(session=sess)
-x1_decov, x3_cov, y2_decov, x2_cov = sess.run([y1, y2, y3, y4])
-print(x1_decov.shape)
-print(x3_cov.shape)
-print(y2_decov.shape)
-print(x2_cov.shape)
 
 
 
