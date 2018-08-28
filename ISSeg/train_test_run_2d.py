@@ -19,7 +19,7 @@ trainPath = 'E:/ISSEG/Dataset/2018REGROUP/128/train/'
 testPath = 'E:/ISSEG/Dataset/2018REGROUP/128/test/'
 
 #change dir here ..............................................................
-resultPath = 'D:/IESLES_Rst/CT_128/exp4/'
+resultPath = 'D:/IESLES_Rst/CT_128/exp5/'
 
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128
@@ -30,8 +30,8 @@ LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4
 ITER_PER_EPOCH = 300
 DECAY_INTERVAL = ITER_PER_EPOCH * 10
-MAX_ITERATION = 50000
-SAVE_CKPT_INTERVAL = 10000
+MAX_ITERATION = ITER_PER_EPOCH * 150
+SAVE_CKPT_INTERVAL = ITER_PER_EPOCH * 50
 CLASSNUM = 2
 TRAIN_BATCHSIZE = 12
 
@@ -102,10 +102,11 @@ def FCNX_run():
             vol_shape = vol_batch.shape
             print(vol_shape)
 
-            #----------------------changed------------------------------------------------------
+            #----------------------changed learning rate --------------------------------------------------------------------
             if (itr + 1) % DECAY_INTERVAL == 0:
                 LEARNING_RATE = LEARNING_RATE * 0.90
                 print('learning_rate:',LEARNING_RATE)
+
             # -------------------------validation with IOU each 10 epoch------------------------------------------------------
             if (itr + 1)% (ITER_PER_EPOCH * 10) == 0:
                 test_dirs = os.listdir(testPath + '/vol/')
@@ -133,9 +134,8 @@ def FCNX_run():
                         one_label_and_pred = one_label_and_pred + np.count_nonzero(intersection)
                 meanIOU = one_label_and_pred / (one_pred_or_label + 1e-4)
                 print('valid meanIOU', meanIOU)
-                    
-            #------------------------------------------------------------------------------------------------------------------------------
 
+            #-----------------------------------------training training training training------------------------------------------------------------------
             feed = {LRate: LEARNING_RATE, iou: meanIOU, image: vol_batch, annotation: seg_batch, bn_flag: True, keep_prob: 0.8, train_batchsize: TRAIN_BATCHSIZE}
             sess.run(train_op, feed_dict= feed)
             train_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=feed)
@@ -145,7 +145,8 @@ def FCNX_run():
 
             if (itr + 1) % SAVE_CKPT_INTERVAL == 0:
                 saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1))
-#-------------------------------------Test Test Test Test-------------------------------------------------------------------------------
+
+            #-------------------------------------Test Test Test Test-------------------------------------------------------------------------------
             if itr == (MAX_ITERATION - 1):
                 print('End training:{}'.format(datetime.datetime.now()))
                 test_dirs = os.listdir(testPath + '/vol/')
