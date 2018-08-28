@@ -19,7 +19,7 @@ trainPath = 'E:/ISSEG/Dataset/2018REGROUP/128/train/'
 testPath = 'E:/ISSEG/Dataset/2018REGROUP/128/test/'
 
 #change dir here ..............................................................
-resultPath = 'D:/IESLES_Rst/CT_128/exp3/'
+resultPath = 'D:/IESLES_Rst/CT_128/exp4/'
 
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128
@@ -33,7 +33,7 @@ MAX_ITERATION = 40000
 ITER_PER_EPOCH = 300
 SAVE_CKPT_INTERVAL = 10000
 CLASSNUM = 2
-TRAIN_BATCHSIZE = 12
+TRAIN_BATCHSIZE = 8
 
 
 def training(lr, loss_val, va_list):
@@ -103,7 +103,7 @@ def FCNX_run():
             print(vol_shape)
 
             #----------------------changed------------------------------------------------------
-            if (itr + 1) % 10000 == 0:
+            if (itr + 1) % DECAY_INTERVAL == 0:
                 LEARNING_RATE = LEARNING_RATE * 0.90
                 print('learning_rate:',LEARNING_RATE)
             # -------------------------validation with IOU each 10 epoch------------------------------------------------------

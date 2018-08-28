@@ -8,7 +8,7 @@ import tensorflow as tf
 NUMPOOL = 2
 FIRST_LAYER_FILTERS = 32
 GROWTH_RATE = 32
-LAYERS_PER_BLOCK = [4] * (2 * NUMPOOL + 1)
+LAYERS_PER_BLOCK = [5] * (2 * NUMPOOL + 1)
 
 def build_dense_fc(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, keep_prob):
     print('tensor_in shape', tensor_in.get_shape())
