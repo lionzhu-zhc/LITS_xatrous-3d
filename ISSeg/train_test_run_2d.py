@@ -19,7 +19,7 @@ trainPath = 'E:/ISSEG/Dataset/2018REGROUP/128/train/'
 testPath = 'E:/ISSEG/Dataset/2018REGROUP/128/test/'
 
 #change dir here ..............................................................
-resultPath = 'D:/IESLES_Rst/CT_128/exp5/'
+resultPath = 'D:/IESLES_Rst/CT_128/exp6/'
 
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128
@@ -28,12 +28,12 @@ IMAGE_CHANNEL = 5
 
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4
-ITER_PER_EPOCH = 300
+ITER_PER_EPOCH = 400
 DECAY_INTERVAL = ITER_PER_EPOCH * 10
 MAX_ITERATION = ITER_PER_EPOCH * 150
 SAVE_CKPT_INTERVAL = ITER_PER_EPOCH * 50
 CLASSNUM = 2
-TRAIN_BATCHSIZE = 12
+TRAIN_BATCHSIZE = 6
 
 
 def training(lr, loss_val, va_list):
@@ -62,14 +62,16 @@ def FCNX_run():
                                                  CLASSNUM= CLASSNUM, keep_prob= keep_prob)
 
     with tf.variable_scope('loss'):
+
         class_weight = tf.constant([0.15,1])
-        #loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
+        loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
 
-        loss_reduce = LossPy.focal_loss(pred= logits, ground_truth= annotation)
+        #loss_reduce = LossPy.focal_loss(pred= logits, ground_truth= annotation)
 
         #loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
+
         tf.summary.scalar('loss', loss_reduce)
 
     with tf.variable_scope('valid_IOU'):
