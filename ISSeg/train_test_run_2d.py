@@ -5,7 +5,8 @@
 
 #import net.UNet_2D as UNet_2D
 #import net.NetDeepLab_2d as NetDeepLab_2d
-import net.dense_fc as dense_fc
+#import net.dense_fc as dense_fc
+import net.PSP_Atrous_2d as PSP_Atrous
 import utils.utils_fun as utils
 import net.LossPy as LossPy
 import os
@@ -19,7 +20,7 @@ trainPath = 'E:/ISSEG/Dataset/2018REGROUP/128/train/'
 testPath = 'E:/ISSEG/Dataset/2018REGROUP/128/test/'
 
 #change dir here ..............................................................
-resultPath = 'D:/IESLES_Rst/CT_128/exp6/'
+resultPath = 'D:/IESLES_Rst/CT_128/exp13/'
 
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128
@@ -28,12 +29,12 @@ IMAGE_CHANNEL = 5
 
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4
-ITER_PER_EPOCH = 400
+ITER_PER_EPOCH = 80
 DECAY_INTERVAL = ITER_PER_EPOCH * 10
 MAX_ITERATION = ITER_PER_EPOCH * 150
 SAVE_CKPT_INTERVAL = ITER_PER_EPOCH * 50
 CLASSNUM = 2
-TRAIN_BATCHSIZE = 6
+TRAIN_BATCHSIZE = 32
 
 
 def training(lr, loss_val, va_list):
@@ -58,19 +59,22 @@ def FCNX_run():
     # logits, pred_annot = NetDeepLab_2d.LITS_DLab(tensor_in = image, BN_FLAG = bn_flag, BATCHSIZE = train_batchsize,
     #                                              CLASSNUM = CLASSNUM, KEEPPROB = keep_prob, IMGCHANNEL = IMAGE_CHANNEL)
 
-    logits, pred_annot = dense_fc.build_dense_fc(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
-                                                 CLASSNUM= CLASSNUM, keep_prob= keep_prob)
+    logits, pred_annot = PSP_Atrous.build_net(tensor_in=image, BN_FLAG=bn_flag, BATCHSIZE=train_batchsize,CLASSNUM=CLASSNUM,
+                                              KEEPPROB=keep_prob, IMGCHANNEL=IMAGE_CHANNEL)
+
+    # logits, pred_annot = dense_fc.build_dense_fc(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
+    #                                              CLASSNUM= CLASSNUM, keep_prob= keep_prob)
 
     with tf.variable_scope('loss'):
 
         class_weight = tf.constant([0.15,1])
-        loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
+        #loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
 
         #loss_reduce = LossPy.focal_loss(pred= logits, ground_truth= annotation)
 
-        #loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
+        loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
 
         tf.summary.scalar('loss', loss_reduce)
 
@@ -109,7 +113,7 @@ def FCNX_run():
                 LEARNING_RATE = LEARNING_RATE * 0.90
                 print('learning_rate:',LEARNING_RATE)
 
-            # -------------------------validation with IOU each 10 epoch------------------------------------------------------
+            # ---------------------validation with IOU each 10 epoch------------------------------------------------------
             if (itr + 1)% (ITER_PER_EPOCH * 10) == 0:
                 test_dirs = os.listdir(testPath + '/vol/')
                 one_pred_or_label = one_label_and_pred = 0

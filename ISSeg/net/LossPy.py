@@ -41,7 +41,7 @@ def cross_entropy_loss(pred, ground_truth, class_weight = None):
     if class_weight is not None:
         current_weight= tf.gather(class_weight, tf.squeeze(ground_truth, axis=-1))
         loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
-                logits=pred, labels=tf.squeeze(ground_truth, squeeze_dims=[-1]), weights=current_weight))
+                logits=pred, labels=tf.squeeze(ground_truth, axis=[-1]), weights=current_weight))
 
     return  loss
 
