@@ -1,8 +1,9 @@
 import numpy as np
 import os
 
-npy_path = 'D:/IESLES_Rst/CT_128/exp12/npys/'
-exp_path = 'D:/IESLES_Rst/CT_128/exp12/'
+exp_path = 'D:/DLexp/IESLES_Rst/CT_128/'
+path = exp_path + 'exp21/'
+npy_path = path + 'npys/'
 file_names = os.listdir(npy_path)
 npy_num = len(file_names)
 
@@ -21,16 +22,17 @@ for img_i in range(0, npy_num, 2):
 
     label_bool = (label_batch == 1)
     pred_bool = (pred_batch == 1)
-    common = np.logical_and(label_bool, pred_bool)
-    liver_labPred = liver_labPred + np.count_nonzero(common == True)
+    # common = np.logical_and(label_bool, pred_bool)
+    common = label_bool * pred_bool
+    liver_labPred = liver_labPred + np.count_nonzero(common)
 
-liver_dice_coe = 2*liver_labPred/(liver_label + liver_pred)
+liver_dice_coe = 2*liver_labPred/(liver_label + liver_pred + 1e-5)
 print("lesion_dice:", liver_dice_coe)
 print("lesion_label", liver_label)
 print("lesion_pred", liver_pred)
 print("lesion_labPred", liver_labPred)
-with open(exp_path + 'FCNX_atrous.txt', 'a+') as resltFile:
-	resltFile.write("lesion_dice:  %.3f \n" %(liver_dice_coe))
+with open(exp_path + 'dice.txt', 'a+') as resltFile:
+	resltFile.write(path + ":  %.3f \n" %(liver_dice_coe))
 
 
 

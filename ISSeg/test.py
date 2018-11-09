@@ -1,78 +1,84 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-#------------------------------------------------------------------------------------------------------------------------------------------
-#----------------------------for sun-------------------------------------------------------------------------------------------------------
-# from pyexcel_xlsx import get_data
-# from pyexcel_xlsx import save_data
-# from collections import OrderedDict
-#
-# THISYEAR = 2018
-# THISMONTH = 8
-# THISDAY = 15
-# path = 'D:/中医院上半年整理.xlsx'
-# dstpath = 'D:/中医院上半年整理-xiugai.xlsx'
-#
-#
-# xls_data = get_data(path)
-# sheet_1 = xls_data['Sheet1']  # type:list
-#
-# length = len(sheet_1)
-# name_col = sheet_1[0].index('姓名')
-# ID_col = sheet_1[0].index('身份证号')
-# birth_col = sheet_1[0].index('出生日期')
-# gender_col = sheet_1[0].index('性别')
-# age_col = sheet_1[0].index('年龄')
-#
-# for i in range(1, length):
-#     info = sheet_1[i]
-#     ID = info[ID_col]
-#     ID = ''.join(ID.split())
-#     if ID != '' and len(ID) == 18:
-#         birth_year = int(ID[6:10])
-#         birth_mon = int(ID[10:12])
-#         birth_day = int(ID[12:14])
-#         geder_mark = int(ID[16])
-#         age = THISYEAR - birth_year
-#         if birth_mon < THISMONTH:
-#             age = str(age)
-#         elif birth_mon == THISMONTH and birth_day < THISDAY:
-#             age =  str(age)
-#         else:
-#             age = str(age-1)
-#         birth_date = str(birth_year) + '-' + str(birth_mon) + '-' + str(birth_day)
-#         info[birth_col] = birth_date
-#         info[age_col] = age
-#         if (geder_mark % 2 == 0):
-#             info[gender_col] = '女'
-#         else:
-#             info[gender_col] = '男'
-#     else:
-#         print("身份证号不正确:", (i+1), info[name_col])
-# save_data(dstpath, xls_data)
-#
-# print('ok')
+# @Time    : 2018/10/8 19:11
+# @Author  : Lionzhu
 
-#------------------------------------------------------------------------------------------------------------------------------------------
+# the deeplab_v3 test py
 
+import net.DeepLabV3 as DeepLabV3
+import tensorflow as tf
 import os
+import math
+import utils.utils_fun as utils
 import numpy as np
-import scipy.misc as smc
+import argparse
+from preprocess import training
 
-ori_path = 'E:/ISSEG/Dataset/2018REGROUP/128/1/'
-dirs = os.listdir(ori_path)
+path = 'E:/ISSEG/Dataset/2018REGROUP/128/4d_VFMT/'
+testPath = path + 'test/'
+resultPath = 'D://DLexp/IESLES_Rst/CT_128_VFMT/exp13/'
 
-for i in range(6):
-    data = np.load(ori_path+dirs[i])
+parser = argparse.ArgumentParser()
 
-    img = np.zeros((128,128,3))
-    cord = np.where(data == 1)
-    img[cord[0], cord[1], 0] = 64
-    img[cord[0], cord[1], 1] = 0
-    img[cord[0], cord[1], 2] = 128
-    smc.toimage(img, cmin= 0, cmax= 255).save(ori_path + dirs[i][:-4] + '.jpg')
+env_arg = parser.add_argument_group('Training params')
+env_arg.add_argument('--batch_norm_epsilon', type= float, default= 1e-5, help= 'batch normlization epsilon')
+env_arg.add_argument('--batch_norm_decay', type= float, default= 0.997, help= 'batch normlization epsilon')
+env_arg.add_argument("--number_of_class", type=int, default=2, help="Number of classes to be predicted.")
+env_arg.add_argument("--l2_regularizer", type=float, default=0.0001, help="l2 regularizer parameter.")
+env_arg.add_argument('--starting_learning_rate', type=float, default=1e-5, help="initial learning rate.")
+env_arg.add_argument("--output_stride", type=int, default=16, help="Spatial Pyramid Pooling rates")
+env_arg.add_argument("--gpu_id", type=int, default=0, help="Id of the GPU to be used")
+env_arg.add_argument("--crop_size", type=int, default=513, help="Image Cropsize.")
+env_arg.add_argument("--resnet_model", default="resnet_v2_50",
+                    choices=["resnet_v2_50", "resnet_v2_101", "resnet_v2_152", "resnet_v2_200"],
+                    help="Resnet model to use as feature extractor. Choose one of: resnet_v2_50 or resnet_v2_101")
+env_arg.add_argument("--current_best_val_loss", type=int, default=99999, help="Best validation loss value.")
+env_arg.add_argument("--accumulated_validation_miou", type=int, default=0, help="Accumulated validation intersection over union.")
+env_arg.add_argument("--batch_size", type=int, default=12, help="Batch size for network train.")
+args = parser.parse_args()
 
+class_label = [v for v in range((args.number_of_class+1))]
+image = tf.placeholder(tf.float32, shape= [None, None, None, 4])
+annotation= tf.placeholder(tf.int32, shape= [None, None, None])
 
+logits = DeepLabV3.deeplab_v3(image, args, is_training=False, reuse=False)
+labels_batch_tf, logits_batch_tf = training.get_valid_logits_and_labels(annotation_batch_tensor= annotation,
+                                                                        logits_batch_tensor= logits,
+                                                                        class_labels= class_label)
 
+prediction = tf.argmax(logits, axis= -1)
 
+with tf.Session() as sess:
+    model_file = tf.train.latest_checkpoint(resultPath +'ckpt/')
+    saver = tf.train.Saver()
+    saver.restore(sess, model_file)
 
+    test_dirs = os.listdir(testPath + '/seg')
+    test_num = len(test_dirs)
+    test_times = math.ceil(test_num / args.batch_size)
 
+    for i in range(int(test_times)):
+        if i != (test_times - 1):
+            tDir = test_dirs[i*args.batch_size : (i+1)*args.batch_size]
+            vol_batch, seg_batch = utils.get_data_test_2d(testPath, tDir, args.batch_size)
+        if i == (test_times - 1):
+            tDir = test_dirs[(test_num - args.batch_size) : test_num]
+            vol_batch, seg_batch = utils.get_data_test_2d(testPath, tDir, args.batch_size)
 
+        test_feed = {image: vol_batch}
+        test_pred = sess.run(prediction, feed_dict= test_feed)
+
+        for j in range (args.batch_size):
+            label_batch = np.squeeze(seg_batch[j, ...])
+            pred_batch = np.squeeze(test_pred[j, ...])
+            label_tosave = np.rot90(label_batch, 1).astype(np.uint8)
+            pred_tosave = np.rot90(pred_batch, 1).astype(np.uint8)
+            label_tosave = np.fliplr(label_tosave)
+            pred_tosave = np.fliplr(pred_tosave)
+
+            namePre = tDir[j]
+            namePre = namePre[:-4]
+            print("test_itr:", namePre)
+            utils.save_imgs_IELES_2d(resultPath, namePre, label_tosave, pred_tosave)
+            utils.save_npys(resultPath, namePre, label_tosave, pred_tosave)

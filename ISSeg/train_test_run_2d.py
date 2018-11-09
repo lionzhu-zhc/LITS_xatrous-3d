@@ -3,10 +3,11 @@
 '''
 
 
-#import net.UNet_2D as UNet_2D
-#import net.NetDeepLab_2d as NetDeepLab_2d
-#import net.dense_fc as dense_fc
+import net.UNet_2D as UNet_2D
+import net.NetDeepLab_2d as NetDeepLab_2d
+import net.dense_fc as dense_fc
 import net.PSP_Atrous_2d as PSP_Atrous
+import net.ResU_2d as resu_2d
 import utils.utils_fun as utils
 import net.LossPy as LossPy
 import os
@@ -14,32 +15,50 @@ import tensorflow as tf
 import numpy as np
 import datetime
 import math
+slim = tf.contrib.slim
 
+#---------------------paths--------------------------------------------------
+path = 'E:/ISSEG/Dataset/2018REGROUP/128/5c/'
+trainPath = path + 'train/'
+testPath = path + 'test/'
+#change dir here ............................................................
+resultPath = 'D:/DLexp/IESLES_Rst/CT_128/exp21/'
+# resultPath = 'D:/DLexp/IESLES_Rst/CT_128/111/12/exp27/'
+pretrain_path = 'D://resnet_v2_50/resnet_v2_50.ckpt'
+#---------------------paths--------------------------------------------------
 
-trainPath = 'E:/ISSEG/Dataset/2018REGROUP/128/train/'
-testPath = 'E:/ISSEG/Dataset/2018REGROUP/128/test/'
-
-#change dir here ..............................................................
-resultPath = 'D:/IESLES_Rst/CT_128/exp13/'
-
+#-----------------Img paras----------------------------------------------
 IMAGE_WIDTH = 128
 IMAGE_HEIGHT = 128
 IMAGE_CHANNEL = 5
-#IMAGE_DEPTH = 24
+CLASSNUM = 2
+#-----------------Img paras----------------------------------------------
 
+#------------training paras-------------------------------------------
 LEARNING_RATE = 1e-3
 WEIGHT_DECAY = 1e-4
-ITER_PER_EPOCH = 80
-DECAY_INTERVAL = ITER_PER_EPOCH * 10
-MAX_ITERATION = ITER_PER_EPOCH * 150
-SAVE_CKPT_INTERVAL = ITER_PER_EPOCH * 50
-CLASSNUM = 2
-TRAIN_BATCHSIZE = 32
+EPOCH = 150
+ITER_PER_EPOCH = 40
+DECAY_INTERVAL = ITER_PER_EPOCH * EPOCH // 15
+MAX_ITERATION = ITER_PER_EPOCH * EPOCH
+SAVE_CKPT_INTERVAL = ITER_PER_EPOCH * EPOCH // 2
+TRAIN_BATCHSIZE = 64
+
+ValidFlag = True
+TestFlag = True
+#------------training paras-------------------------------------------
 
 
-def training(lr, loss_val, va_list):
+def early_training(lr, loss_val, va_list):
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     optimizer = tf.train.AdamOptimizer(lr)
+    with tf.control_dependencies(update_ops):
+        grads = optimizer.compute_gradients(loss_val, var_list=va_list)
+        return optimizer.apply_gradients(grads)
+
+def late_training(lr, loss_val, va_list):
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    optimizer = tf.train.GradientDescentOptimizer(lr)
     with tf.control_dependencies(update_ops):
         grads = optimizer.compute_gradients(loss_val, var_list=va_list)
         return optimizer.apply_gradients(grads)
@@ -53,28 +72,31 @@ def FCNX_run():
     keep_prob = tf.placeholder(tf.float32)
     train_batchsize = tf.placeholder(tf.int32)
 
+    # ----------------------choose net model here------------------------------------------------------------------------------------------------
     #logits, pred_annot, _,_ = UNet_2D.build_unet(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
                                                 # CLASSNUM= CLASSNUM, keep_porb= keep_prob, in_channels= IMAGE_CHANNEL)
 
     # logits, pred_annot = NetDeepLab_2d.LITS_DLab(tensor_in = image, BN_FLAG = bn_flag, BATCHSIZE = train_batchsize,
     #                                              CLASSNUM = CLASSNUM, KEEPPROB = keep_prob, IMGCHANNEL = IMAGE_CHANNEL)
 
-    logits, pred_annot = PSP_Atrous.build_net(tensor_in=image, BN_FLAG=bn_flag, BATCHSIZE=train_batchsize,CLASSNUM=CLASSNUM,
-                                              KEEPPROB=keep_prob, IMGCHANNEL=IMAGE_CHANNEL)
+    # logits, pred_annot = PSP_Atrous.build_net(tensor_in=image, BN_FLAG=bn_flag, BATCHSIZE=train_batchsize,CLASSNUM=CLASSNUM,
+    #                                           KEEPPROB=keep_prob, IMGCHANNEL=IMAGE_CHANNEL)
 
     # logits, pred_annot = dense_fc.build_dense_fc(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
     #                                              CLASSNUM= CLASSNUM, keep_prob= keep_prob)
 
-    with tf.variable_scope('loss'):
+    logits, pred_annot = resu_2d.resU_2d(tensor_in= image, BN_FLAG= bn_flag, CLASSNUM= CLASSNUM)
+    # ----------------------choose net model here------------------------------------------------------------------------------------------------
 
+    with tf.variable_scope('loss'):
         class_weight = tf.constant([0.15,1])
-        #loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
+        loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
 
         #loss_reduce = LossPy.focal_loss(pred= logits, ground_truth= annotation)
 
-        loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
+        # loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
 
         tf.summary.scalar('loss', loss_reduce)
 
@@ -85,12 +107,26 @@ def FCNX_run():
     with tf.variable_scope('trainOP'):
         LRate = tf.placeholder(tf.float32)
         trainable_vars = tf.trainable_variables()
-        train_op = training(LRate, loss_reduce, trainable_vars)
+        train_op = early_training(LRate, loss_reduce, trainable_vars)
         tf.summary.scalar('lr', LRate)
 
     with tf.variable_scope('fcnx') as scope:
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
+
+        # ----------get ckpt to restore--------------------------
+        ckpt_exclude_scopes = 'NewDeepLab, resnet_v2_50/conv1'
+        exclusions = None
+        if ckpt_exclude_scopes:
+            exclusions = [scope.strip() for scope in ckpt_exclude_scopes.split(',')]
+        vars_to_restore = []
+        for var in slim.get_model_variables():
+            excluded = False
+            for exclusion in exclusions:
+                if var.op.name.startswith(exclusion):
+                    excluded = True
+            if not excluded:
+                vars_to_restore.append(var)
 
         sess = tf.Session(config = config)
         print('Begin training:{}'.format(datetime.datetime.now()))
@@ -100,6 +136,13 @@ def FCNX_run():
         sess.run(tf.global_variables_initializer())
         scope.reuse_variables()
         saver = tf.train.Saver()
+
+        restorer = tf.train.Saver(var_list= vars_to_restore)
+        try:
+            restorer.restore(sess, pretrain_path)
+            print('restore ok')
+        except FileNotFoundError:
+            print('Not found pretrained model ckpt')
 
         global LEARNING_RATE
         meanIOU = 0.001
@@ -114,7 +157,7 @@ def FCNX_run():
                 print('learning_rate:',LEARNING_RATE)
 
             # ---------------------validation with IOU each 10 epoch------------------------------------------------------
-            if (itr + 1)% (ITER_PER_EPOCH * 10) == 0:
+            if (itr + 1)% (ITER_PER_EPOCH * 10) == 0 and ValidFlag:
                 test_dirs = os.listdir(testPath + '/vol/')
                 one_pred_or_label = one_label_and_pred = 0
                 test_num = len(test_dirs)
@@ -142,6 +185,7 @@ def FCNX_run():
                 print('valid meanIOU', meanIOU)
 
             #-----------------------------------------training training training training------------------------------------------------------------------
+
             feed = {LRate: LEARNING_RATE, iou: meanIOU, image: vol_batch, annotation: seg_batch, bn_flag: True, keep_prob: 0.8, train_batchsize: TRAIN_BATCHSIZE}
             sess.run(train_op, feed_dict= feed)
             train_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=feed)
@@ -153,7 +197,7 @@ def FCNX_run():
                 saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1))
 
             #-------------------------------------Test Test Test Test-------------------------------------------------------------------------------
-            if itr == (MAX_ITERATION - 1):
+            if itr == (MAX_ITERATION - 1) and TestFlag:
                 print('End training:{}'.format(datetime.datetime.now()))
                 test_dirs = os.listdir(testPath + '/vol/')
                 test_num = len(test_dirs)

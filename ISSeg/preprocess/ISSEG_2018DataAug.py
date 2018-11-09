@@ -2,6 +2,8 @@
 read the mats from All folder
 and prepare the training and test set
 Lionzhu-list 20180726
+180905 keep the CBF and CBV 2 channels
+and discard the other channels
 '''
 
 import os
@@ -11,7 +13,7 @@ import scipy.io as sio
 from PIL import Image
 import cv2
 
-dataPath = 'E:/ISSEG/Dataset/2018REGROUP/128'
+dataPath = 'E:/ISSEG/Dataset/2018REGROUP/224'
 cases = os.listdir(os.path.join(dataPath, 'vol_case'))
 random.shuffle(cases)
 
@@ -24,6 +26,17 @@ def zscore(x):
         slice = (x[..., i] - sliceMean) / sliceStd
         x_zs[..., i] = slice
     return x_zs
+
+def ZeroOneNorm(x):
+    x_shape = x.shape
+    x_zs = np.zeros_like(x)
+    for i in range(x_shape[2]):
+        slice_min = np.min(x[...,i])
+        slice_max = np.max(x[...,i])
+        slice = (slice - slice_min) / (slice_max - slice_min + 1e-5)
+        x_zs[..., i] = slice
+    return x_zs
+
 
 def aug(data, mode):
     shap = data.shape
@@ -66,14 +79,15 @@ def prepareTrain(augFlag):
             vol = sio.loadmat(os.path.join(volPath, f))
             volData = vol['vol']
             volData_zs = zscore(volData)
+            volData_zs = volData_zs[..., 0:5]
             seg = sio.loadmat(os.path.join(segPath, f))
             segData = seg['seg']
-            dstVolPath = os.path.join(dataPath, 'train', 'vol')
+            dstVolPath = os.path.join(dataPath, '5c', 'train', 'vol')
             if not os.path.exists(dstVolPath):
-                os.mkdir(dstVolPath)
-            dstSegPath = os.path.join(dataPath, 'train', 'seg')
+                os.makedirs(dstVolPath)
+            dstSegPath = os.path.join(dataPath, '5c', 'train', 'seg')
             if not os.path.exists(dstSegPath):
-                os.mkdir(dstSegPath)
+                os.makedirs(dstSegPath)
 
             np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4]+'_ori.npy'), volData_zs.astype(np.float32))
             np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4]+'_ori.npy'), segData.astype(np.uint8))
@@ -114,14 +128,15 @@ def prepareTest():
             vol = sio.loadmat(os.path.join(volPath, f))
             volData = vol['vol']
             volData_zs = zscore(volData)
+            volData_zs = volData_zs[:, :, 0:5]
             seg = sio.loadmat(os.path.join(segPath, f))
             segData = seg['seg']
-            dstVolPath = os.path.join(dataPath, 'test', 'vol')
+            dstVolPath = os.path.join(dataPath, '5c', 'test', 'vol')
             if not os.path.exists(dstVolPath):
-                os.mkdir(dstVolPath)
-            dstSegPath = os.path.join(dataPath, 'test', 'seg')
+                os.makedirs(dstVolPath)
+            dstSegPath = os.path.join(dataPath, '5c', 'test', 'seg')
             if not os.path.exists(dstSegPath):
-                os.mkdir(dstSegPath)
+                os.makedirs(dstSegPath)
 
             np.save(os.path.join(dstVolPath, cases[i]+'_'+f[:-4]+'_ori.npy'), volData_zs.astype(np.float32))
             np.save(os.path.join(dstSegPath, cases[i]+'_'+f[:-4]+'_ori.npy'), segData.astype(np.uint8))
