@@ -132,13 +132,25 @@ import tensorflow as tf
 #
 
 #--------read params from ckpt
-from tensorflow.python.tools.inspect_checkpoint import  print_tensors_in_checkpoint_file
-from tensorflow.python import pywrap_tensorflow
-print_tensors_in_checkpoint_file('D://resnet_v2_50/resnet_v2_50.ckpt', tensor_name= None, all_tensors= False, all_tensor_names= True)
+# from tensorflow.python.tools.inspect_checkpoint import  print_tensors_in_checkpoint_file
+# from tensorflow.python import pywrap_tensorflow
+# print_tensors_in_checkpoint_file('D://resnet_v2_50/resnet_v2_50.ckpt', tensor_name= None, all_tensors= False, all_tensor_names= True)
 # print_tensors_in_checkpoint_file('D:/DLexp/IESLES_Rst/CT_128_VFMT/exp12/ckpt/modle-10500', tensor_name= None, all_tensors= False, all_tensor_names= True)
 
 
+path = 'E:/ISSEG/Dataset/2018REGROUP/128/5c/'
+train_path = path + 'test/seg/'
+files = os.listdir(train_path)
 
+lesion = bkg = 0
+
+for f in files:
+    npy = np.load(train_path + f)
+    lesion += np.count_nonzero(npy == 1)
+    bkg += np.count_nonzero(npy == 0)
+
+print('lesion: bkg:', lesion, bkg)
+print(lesion/bkg)
 
 
 

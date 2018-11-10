@@ -22,7 +22,7 @@ path = 'E:/ISSEG/Dataset/2018REGROUP/128/5c/'
 trainPath = path + 'train/'
 testPath = path + 'test/'
 #change dir here ............................................................
-resultPath = 'D:/DLexp/IESLES_Rst/CT_128/exp21/'
+resultPath = 'D:/DLexp/IESLES_Rst/CT_128/exp23/'
 # resultPath = 'D:/DLexp/IESLES_Rst/CT_128/111/12/exp27/'
 pretrain_path = 'D://resnet_v2_50/resnet_v2_50.ckpt'
 #---------------------paths--------------------------------------------------
@@ -66,7 +66,7 @@ def late_training(lr, loss_val, va_list):
 def FCNX_run():
     with tf.name_scope('inputs'):
         annotation = tf.placeholder(tf.int32, shape=[TRAIN_BATCHSIZE, IMAGE_WIDTH, IMAGE_HEIGHT, 1], name='annotation')   # shape BHWC
-        image = tf.placeholder(tf.float32, shape=[TRAIN_BATCHSIZE, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNEL], name='image')           # shape BHWC
+        image = tf.placeholder(tf.float32, shape=[TRAIN_BATCHSIZE, IMAGE_WIDTH, IMAGE_HEIGHT, IMAGE_CHANNEL], name='image')   # shape BHWC
 
     bn_flag = tf.placeholder(tf.bool)
     keep_prob = tf.placeholder(tf.float32)
@@ -86,11 +86,13 @@ def FCNX_run():
     #                                              CLASSNUM= CLASSNUM, keep_prob= keep_prob)
 
     logits, pred_annot = resu_2d.resU_2d(tensor_in= image, BN_FLAG= bn_flag, CLASSNUM= CLASSNUM)
+
     # ----------------------choose net model here------------------------------------------------------------------------------------------------
 
     with tf.variable_scope('loss'):
         class_weight = tf.constant([0.15,1])
         loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
+        # valid_loss = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
         # loss_reduce = tf.reduce_mean(loss) + tf.add_n(l2_loss)
 
@@ -99,6 +101,7 @@ def FCNX_run():
         # loss_reduce = LossPy.dice_sqaure(pred = logits, ground_truth= annotation)
 
         tf.summary.scalar('loss', loss_reduce)
+        # tf.summary.scalar('valid_loss', valid_loss)
 
     with tf.variable_scope('valid_IOU'):
         iou = tf.placeholder(tf.float32)
@@ -132,7 +135,8 @@ def FCNX_run():
         print('Begin training:{}'.format(datetime.datetime.now()))
 
         merge_op = tf.summary.merge_all()
-        train_writer = tf.summary.FileWriter(resultPath + '/log', sess.graph)
+        train_writer = tf.summary.FileWriter(resultPath + '/log/train', sess.graph)
+        valid_writer = tf.summary.FileWriter(resultPath + '/log/valid')
         sess.run(tf.global_variables_initializer())
         scope.reuse_variables()
         saver = tf.train.Saver()
@@ -148,6 +152,7 @@ def FCNX_run():
         meanIOU = 0.001
         for itr in range(MAX_ITERATION):
             vol_batch, seg_batch = utils.get_data_train_2d(trainPath, batchsize= TRAIN_BATCHSIZE)
+            valid_vol_batch, valid_seg_batch = utils.get_data_train_2d(testPath, batchsize=TRAIN_BATCHSIZE)
             vol_shape = vol_batch.shape
             print(vol_shape)
 
@@ -185,13 +190,17 @@ def FCNX_run():
                 print('valid meanIOU', meanIOU)
 
             #-----------------------------------------training training training training------------------------------------------------------------------
-
-            feed = {LRate: LEARNING_RATE, iou: meanIOU, image: vol_batch, annotation: seg_batch, bn_flag: True, keep_prob: 0.8, train_batchsize: TRAIN_BATCHSIZE}
+            feed = {LRate: LEARNING_RATE, iou: meanIOU, image: vol_batch, annotation: seg_batch, bn_flag: True, keep_prob: 1, train_batchsize: TRAIN_BATCHSIZE}
             sess.run(train_op, feed_dict= feed)
-            train_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=feed)
+            # train_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=feed)
+            train_loss_print, summary_str= sess.run([loss_reduce, merge_op], feed_dict=feed)
+            train_writer.add_summary(summary_str, itr)
+            valid_feed = {LRate: LEARNING_RATE, iou: meanIOU, image: valid_vol_batch, annotation: valid_seg_batch, bn_flag: False, keep_prob: 1, train_batchsize: TRAIN_BATCHSIZE}
+            valid_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict= valid_feed)
+            valid_writer.add_summary(summary_str, itr)
             print(itr, vol_batch.shape)
             print('loss:', train_loss_print)
-            train_writer.add_summary(summary_str, itr)
+            print('valid_loss:', valid_loss_print)
 
             if (itr + 1) % SAVE_CKPT_INTERVAL == 0:
                 saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1))
@@ -224,6 +233,9 @@ def FCNX_run():
                         print("test_itr:", namePre)
                         utils.save_imgs_IELES_2d(resultPath, namePre, label_tosave, pred_tosave)
                         utils.save_npys(resultPath, namePre, label_tosave, pred_tosave)
+
+        train_writer.close()
+        valid_writer.close()
 
 
 

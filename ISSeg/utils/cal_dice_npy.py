@@ -1,8 +1,8 @@
 import numpy as np
 import os
 
-exp_path = 'D:/DLexp/IESLES_Rst/CT_128/'
-path = exp_path + 'exp21/'
+exp_path = 'D:/DLexp/IESLES_Rst/CT_256/'
+path = exp_path + 'exp6/'
 npy_path = path + 'npys/'
 file_names = os.listdir(npy_path)
 npy_num = len(file_names)
