@@ -228,7 +228,7 @@ def LITS_DLab(tensor_in, BN_FLAG, BATCHSIZE, CLASSNUM, KEEPPROB, IMGCHANNEL):
     with tf.variable_scope('Argmax'):
         annotation_pred = tf.argmax(deconv3_res, axis = 3, name='prediction')
 
-    return deconv3_res, tf.expand_dims(annotation_pred, dim=3)
+    return deconv3_res, tf.expand_dims(annotation_pred, axis= 3)
    # return tf.expand_dims(annotation_pred, dim=4), deconv3_res
 
 

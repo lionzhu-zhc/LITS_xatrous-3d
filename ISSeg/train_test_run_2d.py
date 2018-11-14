@@ -22,7 +22,7 @@ path = 'E:/ISSEG/Dataset/2018REGROUP/128/5c/'
 trainPath = path + 'train/'
 testPath = path + 'test/'
 #change dir here ............................................................
-resultPath = 'D:/DLexp/IESLES_Rst/CT_128/exp23/'
+resultPath = 'D:/DLexp/IESLES_Rst/CT_128/exp28/'
 # resultPath = 'D:/DLexp/IESLES_Rst/CT_128/111/12/exp27/'
 pretrain_path = 'D://resnet_v2_50/resnet_v2_50.ckpt'
 #---------------------paths--------------------------------------------------
@@ -76,8 +76,8 @@ def FCNX_run():
     #logits, pred_annot, _,_ = UNet_2D.build_unet(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
                                                 # CLASSNUM= CLASSNUM, keep_porb= keep_prob, in_channels= IMAGE_CHANNEL)
 
-    # logits, pred_annot = NetDeepLab_2d.LITS_DLab(tensor_in = image, BN_FLAG = bn_flag, BATCHSIZE = train_batchsize,
-    #                                              CLASSNUM = CLASSNUM, KEEPPROB = keep_prob, IMGCHANNEL = IMAGE_CHANNEL)
+    logits, pred_annot = NetDeepLab_2d.LITS_DLab(tensor_in = image, BN_FLAG = bn_flag, BATCHSIZE = train_batchsize,
+                                                 CLASSNUM = CLASSNUM, KEEPPROB = keep_prob, IMGCHANNEL = IMAGE_CHANNEL)
 
     # logits, pred_annot = PSP_Atrous.build_net(tensor_in=image, BN_FLAG=bn_flag, BATCHSIZE=train_batchsize,CLASSNUM=CLASSNUM,
     #                                           KEEPPROB=keep_prob, IMGCHANNEL=IMAGE_CHANNEL)
@@ -85,12 +85,12 @@ def FCNX_run():
     # logits, pred_annot = dense_fc.build_dense_fc(tensor_in= image, BN_FLAG= bn_flag, BATCHSIZE= train_batchsize,
     #                                              CLASSNUM= CLASSNUM, keep_prob= keep_prob)
 
-    logits, pred_annot = resu_2d.resU_2d(tensor_in= image, BN_FLAG= bn_flag, CLASSNUM= CLASSNUM)
+    # logits, pred_annot = resu_2d.resU_2d(tensor_in= image, BN_FLAG= bn_flag, CLASSNUM= CLASSNUM)
 
     # ----------------------choose net model here------------------------------------------------------------------------------------------------
 
     with tf.variable_scope('loss'):
-        class_weight = tf.constant([0.15,1])
+        class_weight = tf.constant([0.1,1])
         loss_reduce = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # valid_loss = LossPy.cross_entropy_loss(pred= logits, ground_truth= annotation, class_weight= class_weight)
         # l2_loss = [WEIGHT_DECAY * tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'w' in v.name]
@@ -118,18 +118,18 @@ def FCNX_run():
         config.gpu_options.allow_growth = True
 
         # ----------get ckpt to restore--------------------------
-        ckpt_exclude_scopes = 'NewDeepLab, resnet_v2_50/conv1'
-        exclusions = None
-        if ckpt_exclude_scopes:
-            exclusions = [scope.strip() for scope in ckpt_exclude_scopes.split(',')]
-        vars_to_restore = []
-        for var in slim.get_model_variables():
-            excluded = False
-            for exclusion in exclusions:
-                if var.op.name.startswith(exclusion):
-                    excluded = True
-            if not excluded:
-                vars_to_restore.append(var)
+        # ckpt_exclude_scopes = 'NewDeepLab, resnet_v2_50/conv1'
+        # exclusions = None
+        # if ckpt_exclude_scopes:
+        #     exclusions = [scope.strip() for scope in ckpt_exclude_scopes.split(',')]
+        # vars_to_restore = []
+        # for var in slim.get_model_variables():
+        #     excluded = False
+        #     for exclusion in exclusions:
+        #         if var.op.name.startswith(exclusion):
+        #             excluded = True
+        #     if not excluded:
+        #         vars_to_restore.append(var)
 
         sess = tf.Session(config = config)
         print('Begin training:{}'.format(datetime.datetime.now()))
@@ -141,12 +141,13 @@ def FCNX_run():
         scope.reuse_variables()
         saver = tf.train.Saver()
 
-        restorer = tf.train.Saver(var_list= vars_to_restore)
-        try:
-            restorer.restore(sess, pretrain_path)
-            print('restore ok')
-        except FileNotFoundError:
-            print('Not found pretrained model ckpt')
+        #------------restorer-----------------------------------------------------------
+        # restorer = tf.train.Saver(var_list= vars_to_restore)
+        # try:
+        #     restorer.restore(sess, pretrain_path)
+        #     print('restore ok')
+        # except FileNotFoundError:
+        #     print('Not found pretrained model ckpt')
 
         global LEARNING_RATE
         meanIOU = 0.001
@@ -156,12 +157,12 @@ def FCNX_run():
             vol_shape = vol_batch.shape
             print(vol_shape)
 
-            #----------------------changed learning rate --------------------------------------------------------------------
+            #----------------------changed learning rate ---------------------------------------------------------------
             if (itr + 1) % DECAY_INTERVAL == 0:
                 LEARNING_RATE = LEARNING_RATE * 0.90
                 print('learning_rate:',LEARNING_RATE)
 
-            # ---------------------validation with IOU each 10 epoch------------------------------------------------------
+            # ---------------------validation with IOU each 10 epoch----------------------------------------------------
             if (itr + 1)% (ITER_PER_EPOCH * 10) == 0 and ValidFlag:
                 test_dirs = os.listdir(testPath + '/vol/')
                 one_pred_or_label = one_label_and_pred = 0
@@ -189,13 +190,15 @@ def FCNX_run():
                 meanIOU = one_label_and_pred / (one_pred_or_label + 1e-4)
                 print('valid meanIOU', meanIOU)
 
-            #-----------------------------------------training training training training------------------------------------------------------------------
-            feed = {LRate: LEARNING_RATE, iou: meanIOU, image: vol_batch, annotation: seg_batch, bn_flag: True, keep_prob: 1, train_batchsize: TRAIN_BATCHSIZE}
+            #-----------------------------------------training training training training-----------------------------------------------------------
+            feed = {LRate: LEARNING_RATE, iou: meanIOU, image: vol_batch, annotation: seg_batch,
+                    bn_flag: True, keep_prob: 0.8, train_batchsize: TRAIN_BATCHSIZE}
             sess.run(train_op, feed_dict= feed)
             # train_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=feed)
             train_loss_print, summary_str= sess.run([loss_reduce, merge_op], feed_dict=feed)
             train_writer.add_summary(summary_str, itr)
-            valid_feed = {LRate: LEARNING_RATE, iou: meanIOU, image: valid_vol_batch, annotation: valid_seg_batch, bn_flag: False, keep_prob: 1, train_batchsize: TRAIN_BATCHSIZE}
+            valid_feed = {LRate: LEARNING_RATE, iou: meanIOU, image: valid_vol_batch, annotation: valid_seg_batch,
+                          bn_flag: False, keep_prob: 1, train_batchsize: TRAIN_BATCHSIZE}
             valid_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict= valid_feed)
             valid_writer.add_summary(summary_str, itr)
             print(itr, vol_batch.shape)
@@ -218,7 +221,7 @@ def FCNX_run():
                     if i == (test_times - 1):
                         tDir = test_dirs[(test_num-TRAIN_BATCHSIZE) : test_num]
                         vol_batch, seg_batch = utils.get_data_test_2d(testPath, tDir, TRAIN_BATCHSIZE)
-                    test_feed = {image: vol_batch, annotation: seg_batch,bn_flag: False, keep_prob:1, train_batchsize: TRAIN_BATCHSIZE}
+                    test_feed = {image: vol_batch, annotation: seg_batch, bn_flag: False, keep_prob:1, train_batchsize: TRAIN_BATCHSIZE}
                     test_pred_annotation = sess.run(pred_annot, feed_dict=test_feed)
                     for j in range(TRAIN_BATCHSIZE):
                         label_batch = np.squeeze(seg_batch[j,...])

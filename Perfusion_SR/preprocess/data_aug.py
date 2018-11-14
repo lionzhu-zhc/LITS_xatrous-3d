@@ -13,13 +13,14 @@ import scipy.io as sio
 ori_path = 'E:/Cerebral Infarction/SuperResolution/SR_15_30/'
 label_path = 'E:/Cerebral Infarction/SuperResolution/Perfusion_mat/'
 # 30x512x512
-dst_path = 'E:/Cerebral Infarction/SuperResolution/exp_data2/'
+dst_path = 'E:/Cerebral Infarction/SuperResolution/exp_data/'
 
 ImgWidth = 512
 ImgHeight = 512
-PatchSize = 128
-Step = 64
-# 6*Step + Pachsize = 512
+PatchSize = 64
+Step = 16
+# 28*Step + Pachsize = 512, n=28+1
+n_patch = 29
 
 def ZeroOneNorm(x):
     min = np.min(x)
@@ -33,6 +34,8 @@ def zscore(x):
     x_norm = (x - x_mean) / x_std
     return x_norm
 
+def Norm(x):
+    return (x / 1000)
 
 def PrepareTraining(AUG):
     if AUG:
@@ -43,20 +46,20 @@ def PrepareTraining(AUG):
                 name_pre = mats[j][:-4]
                 ori_mat = sio.loadmat(os.path.join(ori_path, patients[i], mats[j]))
                 vol_norm = ori_mat['Mat']
-                # vol_norm = ZeroOneNorm(mat)
+                # vol_norm = ZeroOneNorm(vol_norm)
                 ori_mat = sio.loadmat(os.path.join(label_path, patients[i], mats[j]))
                 label = ori_mat['Mat']
 
-                for n in range (31):
-                    for m in range(31):
-                        vol_patch = vol_norm[:, m*Step: (m*Step + PatchSize), n*Step: (n*Step + PatchSize)]   #30x32x32
+                for n in range (n_patch):
+                    for m in range(n_patch):
+                        vol_patch = vol_norm[:, m*Step: (m*Step + PatchSize), n*Step: (n*Step + PatchSize)]   #30xPSxPS
                         label_patch = label[:, m*Step: (m*Step + PatchSize), n*Step: (n*Step + PatchSize)]
-                        vol_patch = ZeroOneNorm(vol_patch)
-                        label_patch = ZeroOneNorm(label_patch)
-                        label_patch = label_patch[:, 6:26, 6:26]  # crop 30x20x20
+                        vol_patch = Norm(vol_patch)
+                        label_patch = Norm(label_patch)
+                        # label_patch = label_patch[:, 6:26, 6:26]  # crop 30x20x20
 
-                        np.save(dst_path + 'train/' + 'vol/' + patients[i] + '_ori' + '_' + name_pre + '_' + str(n*31+m) + '.npy', vol_patch.astype(np.float32))
-                        np.save(dst_path + 'train/' + 'label/' + patients[i] + '_ori' + '_' + name_pre + '_' + str(n*31+m) + '.npy', label_patch.astype(np.float32))
+                        np.save(dst_path + 'train/' + 'vol/' + patients[i] + '_ori' + '_' + name_pre + '_' + str(n*n_patch+m) + '.npy', vol_patch.astype(np.float32))
+                        np.save(dst_path + 'train/' + 'label/' + patients[i] + '_ori' + '_' + name_pre + '_' + str(n*n_patch+m) + '.npy', label_patch.astype(np.float32))
 
                 #-------- rot 90--------------
                 vol_norm_rot90 = np.zeros_like(vol_norm)
@@ -64,16 +67,16 @@ def PrepareTraining(AUG):
                 for m in range(vol_norm.shape[0]):
                     vol_norm_rot90[m, ...] = np.rot90(vol_norm[m, ...])
                     label_rot90[m, ...] = np.rot90(label[m, ...])
-                for n in range (31):
-                    for m in range(31):
+                for n in range (n_patch):
+                    for m in range(n_patch):
                         vol_patch = vol_norm_rot90[:, m*Step: (m*Step + PatchSize), n*Step: (n*Step + PatchSize)]   #30x32x32
                         label_patch = label_rot90[:, m*Step: (m*Step + PatchSize), n*Step: (n*Step + PatchSize)]
-                        vol_patch = ZeroOneNorm(vol_patch)
-                        label_patch = ZeroOneNorm(label_patch)
-                        label_patch = label_patch[:, 6:26, 6:26]  # crop 30x20x20
+                        vol_patch = Norm(vol_patch)
+                        label_patch = Norm(label_patch)
+                        # label_patch = label_patch[:, 6:26, 6:26]  # crop 30x20x20
 
-                        np.save(dst_path + 'train/' + 'vol/' + patients[i] + '_rot' + '_' + name_pre + '_' + str(n*31+m) + '.npy', vol_patch.astype(np.float32))
-                        np.save(dst_path + 'train/' + 'label/' + patients[i] + '_rot' + '_' + name_pre + '_' + str(n*31+m) + '.npy', label_patch.astype(np.float32))
+                        np.save(dst_path + 'train/' + 'vol/' + patients[i] + '_rot' + '_' + name_pre + '_' + str(n*n_patch+m) + '.npy', vol_patch.astype(np.float32))
+                        np.save(dst_path + 'train/' + 'label/' + patients[i] + '_rot' + '_' + name_pre + '_' + str(n*n_patch+m) + '.npy', label_patch.astype(np.float32))
 
                 # -------- mirror--------------
                 vol_norm_mir = np.zeros_like(vol_norm)
@@ -81,18 +84,18 @@ def PrepareTraining(AUG):
                 for m in range(vol_norm.shape[0]):
                     vol_norm_mir[m, ...] = np.fliplr(vol_norm[m, ...])
                     label_mir[m, ...] = np.fliplr(label[m, ...])
-                for n in range(7):
-                    for m in range(7):
+                for n in range(n_patch):
+                    for m in range(n_patch):
                         vol_patch = vol_norm_mir[:, m*Step: (m*Step + PatchSize), n*Step: (n*Step + PatchSize)]  # 30x32x32
                         label_patch = label_mir[:, m*Step: (m*Step + PatchSize), n*Step: (n*Step + PatchSize)]
-                        vol_patch = ZeroOneNorm(vol_patch)
-                        label_patch = ZeroOneNorm(label_patch)
-                        label_patch = label_patch[:, 6:26, 6:26]  # crop 30x20x20
+                        vol_patch = Norm(vol_patch)
+                        label_patch = Norm(label_patch)
+                        # label_patch = label_patch[:, 6:26, 6:26]  # crop 30x20x20
 
                         np.save(dst_path + 'train/' + 'vol/' + patients[i] + '_mir' + '_' + name_pre + '_' + str(
-                            n * 31 + m) + '.npy', vol_patch.astype(np.float32))
+                            n * n_patch + m) + '.npy', vol_patch.astype(np.float32))
                         np.save(dst_path + 'train/' + 'label/' + patients[i] + '_mir' + '_' + name_pre + '_' + str(
-                            n * 31 + m) + '.npy', label_patch.astype(np.float32))
+                            n * n_patch + m) + '.npy', label_patch.astype(np.float32))
 
     else:
         patients = os.listdir(ori_path)
@@ -106,20 +109,20 @@ def PrepareTraining(AUG):
                 ori_mat = sio.loadmat(os.path.join(label_path, patients[i], mats[j]))
                 label = ori_mat['Mat']
 
-                for n in range(7):
-                    for m in range(7):
+                for n in range(n_patch):
+                    for m in range(n_patch):
                         vol_patch = vol_norm[:, m * Step: (m * Step + PatchSize),
                                     n * Step: (n * Step + PatchSize)]  # 30x32x32
                         label_patch = label[:, m * Step: (m * Step + PatchSize), n * Step: (n * Step + PatchSize)]
-                        vol_patch = zscore(vol_patch)
-                        #label_patch = ZeroOneNorm(label_patch)
+                        vol_patch = Norm(vol_patch)
+                        label_patch = Norm(label_patch)
 
                         #label_patch = label_patch[:, 6:26, 6:26]  # crop 30x20x20
 
-                        np.save(dst_path + 'train_noaug_128/' + 'vol/' + patients[i] + '_ori' + '_' + name_pre + '_' + str(
-                            n * 7 + m) + '.npy', vol_patch.astype(np.float32))
-                        np.save(dst_path + 'train_noaug_128/' + 'label/' + patients[i] + '_ori' + '_' + name_pre + '_' + str(
-                            n * 7 + m) + '.npy', label_patch.astype(np.float32))
+                        np.save(dst_path + 'train_noaug/' + 'vol/' + patients[i] + '_ori' + '_' + name_pre + '_' + str(
+                            n * n_patch + m) + '.npy', vol_patch.astype(np.float32))
+                        np.save(dst_path + 'train_noaug/' + 'label/' + patients[i] + '_ori' + '_' + name_pre + '_' + str(
+                            n * n_patch + m) + '.npy', label_patch.astype(np.float32))
 
 
 
@@ -131,12 +134,13 @@ def PrepareTest():
             name_pre = mats[j][:-4]
             ori_mat = sio.loadmat(os.path.join(ori_path, patients[i], mats[j]))
             mat = ori_mat['Mat']
-            vol_norm = zscore(mat)
+            vol_norm = Norm(mat)
             shap = vol_norm.shape
             # vol_dst = np.zeros((shap[0], shap[1] + 12, shap[2] + 12))
             # vol_dst[:, 6:518, 6:518] = vol_norm
             ori_mat = sio.loadmat(os.path.join(label_path, patients[i], mats[j]))
             label = ori_mat['Mat']
+            label = Norm(label)
 
             np.save(
                 dst_path + 'test/' + 'vol/' + patients[i] + '_' + name_pre  + '.npy',
@@ -149,5 +153,5 @@ def PrepareTest():
 if __name__ == '__main__':
     AUG_Flag = False
     PrepareTraining(AUG_Flag)
-    # PrepareTest()
+    PrepareTest()
     print('ok')
