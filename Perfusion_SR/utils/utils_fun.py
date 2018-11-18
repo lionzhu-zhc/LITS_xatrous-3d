@@ -18,7 +18,7 @@ def get_data_train_2d(trainPath, batchsize):
             vol_batch_tmp, seg_batch_tmp = get_batch_train_2d(trainPath)
             vol_batch = np.concatenate((vol_batch, vol_batch_tmp), axis=0)
             seg_batch = np.concatenate((seg_batch, seg_batch_tmp), axis=0)
-    return vol_batch, seg_batch    #shape [BS, height, width, 30]
+    return vol_batch, seg_batch    #shape [BS,depth, height, width]
 
 def get_batch_train_2d(trainPath):
     dirs_train = os.listdir(trainPath + 'vol/')
@@ -26,8 +26,8 @@ def get_batch_train_2d(trainPath):
     #print(samples)
     vol_batch = np.load(trainPath + 'vol/' + samples)
     seg_batch = np.load(trainPath + 'label/' + samples)
-    vol_batch = np.transpose(vol_batch, [1,2,0])
-    seg_batch = np.transpose(seg_batch, [1,2,0])
+    # vol_batch = np.transpose(vol_batch, [1,2,0])
+    # seg_batch = np.transpose(seg_batch, [1,2,0])
     vol_batch = np.expand_dims(vol_batch, axis=0)
     seg_batch = np.expand_dims(seg_batch, axis=0)
     vol_batch.astype(np.float32)
@@ -44,13 +44,13 @@ def get_data_test_2d(testPath, tDir, batchsize):
             vol_batch_tmp, seg_batch_tmp = get_batch_test_2d(testPath, tDir, i-1)
             vol_batch = np.concatenate((vol_batch, vol_batch_tmp), axis = 0)
             seg_batch = np.concatenate((seg_batch, seg_batch_tmp), axis = 0)
-    return vol_batch, seg_batch  # vol_shape [BWHC]
+    return vol_batch, seg_batch  # vol_shape [BDWH]
 
 def get_batch_test_2d(testPath, tDir, ind= 0):
     vol_batch = np.load(testPath + 'vol/' + tDir)
     seg_batch = np.load(testPath + 'label/' + tDir)
-    vol_batch = np.transpose(vol_batch, [1, 2, 0])
-    seg_batch = np.transpose(seg_batch, [1, 2, 0])
+    # vol_batch = np.transpose(vol_batch, [1, 2, 0])
+    # seg_batch = np.transpose(seg_batch, [1, 2, 0])
     vol_batch = np.expand_dims(vol_batch, axis = 0)
     seg_batch = np.expand_dims(seg_batch, axis = 0)
     vol_batch.astype(np.float32)

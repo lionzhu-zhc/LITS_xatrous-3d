@@ -13,14 +13,14 @@ import scipy.io as sio
 ori_path = 'E:/Cerebral Infarction/SuperResolution/SR_15_30/'
 label_path = 'E:/Cerebral Infarction/SuperResolution/Perfusion_mat/'
 # 30x512x512
-dst_path = 'E:/Cerebral Infarction/SuperResolution/exp_data/'
+dst_path = 'E:/Cerebral Infarction/SuperResolution/exp_data4/'
 
 ImgWidth = 512
 ImgHeight = 512
-PatchSize = 64
+PatchSize = 32
 Step = 16
-# 28*Step + Pachsize = 512, n=28+1
-n_patch = 29
+# 30*Step + Pachsize = 512, n=30+1
+n_patch = 31
 
 def ZeroOneNorm(x):
     min = np.min(x)
@@ -35,7 +35,7 @@ def zscore(x):
     return x_norm
 
 def Norm(x):
-    return (x / 1000)
+    return (x / 200)
 
 def PrepareTraining(AUG):
     if AUG:
@@ -104,7 +104,7 @@ def PrepareTraining(AUG):
             for j in range(4):
                 name_pre = mats[j][:-4]
                 ori_mat = sio.loadmat(os.path.join(ori_path, patients[i], mats[j]))
-                vol_norm = ori_mat['Mat']
+                vol_norm = ori_mat['Mat']    # shape: [Depth, Width, Height]
                 # vol_norm = ZeroOneNorm(mat)
                 ori_mat = sio.loadmat(os.path.join(label_path, patients[i], mats[j]))
                 label = ori_mat['Mat']

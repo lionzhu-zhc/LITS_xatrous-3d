@@ -11,25 +11,26 @@ from net import SRCNN, LossPy, ResSR, sparse_CNN
 from utils import utils_fun
 import datetime
 import os
+import numpy as np
 slim = tf.contrib.slim
 
-path = 'E:/Cerebral Infarction/SuperResolution/exp_data/'
+path = 'E:/Cerebral Infarction/SuperResolution/exp_data4/'
 # trainPath = path + '1/'
 trainPath = path + 'train_noaug/'
 testPath = path + 'test/'
 #change dir here ..............................................................
-resultPath = 'D:/DLexp/SuperResolution_Rst/exp1/'
+resultPath = 'D:/DLexp/SuperResolution_Rst/exp4/'
 pretrain_path = 'D://resnet_v2_50/resnet_v2_50.ckpt'
 
 IMAGE_CHANNEL = 30
 
 LEARNING_RATE = 1e-3
 EPOCH = 10
-ITER_PER_EPOCH = 1000
+ITER_PER_EPOCH = 2000
 DECAY_INTERVAL = ITER_PER_EPOCH * EPOCH // 10
 MAX_ITERATION = ITER_PER_EPOCH * EPOCH
 SAVE_CKPT_INTERVAL = ITER_PER_EPOCH * EPOCH // 2
-TRAIN_BATCHSIZE = 64
+TRAIN_BATCHSIZE = 32
 
 def training(lr, loss_val, va_list):
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
@@ -40,11 +41,10 @@ def training(lr, loss_val, va_list):
 
 def srcnn_run():
     with tf.name_scope('inputs'):
-        image = tf.placeholder(tf.float32, shape=[None, None, None, 30], name='image')           # shape BHWC
-        annotation = tf.placeholder(tf.float32, shape=[None, None, None, 30], name='annotation')  # shape BHWC
+        image = tf.placeholder(tf.float32, shape=[None, None, None, None, 1], name='image')           # shape BDHWC
+        annotation = tf.placeholder(tf.float32, shape=[None, None, None, None, 1], name='annotation')  # shape BDHWC
     bn_flag = tf.placeholder(tf.bool)
     keep_prob = tf.placeholder(tf.float32)
-    # train_batchsize = tf.placeholder(tf.int32)
 
     #pred = SRCNN.build_srcnn(tensor_in= image, BN_FLAG= bn_flag, KEEPPROB= keep_prob, IMGCHANNEL= IMAGE_CHANNEL)
     # pred = ResSR.ResSR(inputs= image, is_training= bn_flag, IMGCHANNEL= IMAGE_CHANNEL)
@@ -102,7 +102,11 @@ def srcnn_run():
 
         for itr in range(MAX_ITERATION):
             vol_batch, label_batch = utils_fun.get_data_train_2d(trainPath, batchsize=TRAIN_BATCHSIZE)
+            vol_batch = np.expand_dims(vol_batch, axis=4)
+            label_batch = np.expand_dims(label_batch, axis=4)
             valid_vol_batch, valid_seg_batch = utils_fun.get_data_train_2d(testPath, batchsize= 1)
+            valid_vol_batch = np.expand_dims(valid_vol_batch, axis=4)
+            valid_seg_batch = np.expand_dims(valid_seg_batch, axis=4)
             vol_shape = vol_batch.shape
             print('vol_shape: ', vol_shape)
 
@@ -126,18 +130,19 @@ def srcnn_run():
             if (itr + 1) % SAVE_CKPT_INTERVAL == 0:
                 saver.save(sess, resultPath + 'ckpt/modle', global_step= (itr+1))
 
-            # -------------------------------------Test Test Test Test----------------------------------------------------------------------
+            # -------------------------------------Test Test Test Test--------------------------------------------------------------
             if itr == (MAX_ITERATION - 1):
                 test_dirs = os.listdir(testPath + '/vol/')
                 test_num = len(test_dirs)
                 for i in range(test_num):
                     t_dir = test_dirs[i]
                     vol_batch, label_batch = utils_fun.get_batch_test_2d(testPath, t_dir)
+                    vol_batch = np.expand_dims(vol_batch, axis=4)
+                    label_batch = np.expand_dims(label_batch, axis=4)
                     test_feed = {image: vol_batch, annotation: label_batch, bn_flag: False, keep_prob: 1}
                     test_pred = sess.run(target, feed_dict=test_feed)
-
-                    label_tosave = label_batch
-                    pred_tosave = test_pred
+                    label_tosave = np.squeeze(label_batch, axis=4)
+                    pred_tosave = np.squeeze(test_pred, axis=4)
                     name_pre = t_dir[:-4]
                     print("test_itr:", name_pre)
                     utils_fun.SaveNpys(resultPath, name_pre, label_tosave, pred_tosave)
