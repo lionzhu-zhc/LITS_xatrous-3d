@@ -10,8 +10,8 @@ import tensorflow as tf
 
 def build_sparseCNN(tensor_in, BN_FLAG, KEEPPROB, IMGCHANNEL):
     res = tensor_in
-    for i in range(5):
-        if i != 4:
+    for i in range(10):
+        if i != 9:
             out_channel = 32
         else:
             out_channel = 1

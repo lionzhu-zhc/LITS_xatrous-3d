@@ -14,12 +14,12 @@ import os
 import numpy as np
 slim = tf.contrib.slim
 
-path = 'E:/Cerebral Infarction/SuperResolution/exp_data4/'
+path = 'E:/Cerebral Infarction/SuperResolution/exp_data3/'
 # trainPath = path + '1/'
 trainPath = path + 'train_noaug/'
 testPath = path + 'test/'
 #change dir here ..............................................................
-resultPath = 'D:/DLexp/SuperResolution_Rst/exp4/'
+resultPath = 'D:/DLexp/SuperResolution_Rst/exp6/'
 pretrain_path = 'D://resnet_v2_50/resnet_v2_50.ckpt'
 
 IMAGE_CHANNEL = 30

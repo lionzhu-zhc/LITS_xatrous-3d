@@ -13,7 +13,7 @@ import scipy.io as sio
 ori_path = 'E:/Cerebral Infarction/SuperResolution/SR_15_30/'
 label_path = 'E:/Cerebral Infarction/SuperResolution/Perfusion_mat/'
 # 30x512x512
-dst_path = 'E:/Cerebral Infarction/SuperResolution/exp_data4/'
+dst_path = 'E:/Cerebral Infarction/SuperResolution/exp_data3/'
 
 ImgWidth = 512
 ImgHeight = 512
@@ -35,7 +35,7 @@ def zscore(x):
     return x_norm
 
 def Norm(x):
-    return (x / 200)
+    return (x / 100)
 
 def PrepareTraining(AUG):
     if AUG:
@@ -143,7 +143,7 @@ def PrepareTest():
             label = Norm(label)
 
             np.save(
-                dst_path + 'test/' + 'vol/' + patients[i] + '_' + name_pre  + '.npy',
+                dst_path + 'test/' + 'vol/' + patients[i] + '_' + name_pre + '.npy',
                 vol_norm.astype(np.float32))
             np.save(
                 dst_path + 'test/' + 'label/' + patients[i] + '_' + name_pre + '.npy',

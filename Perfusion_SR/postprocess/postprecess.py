@@ -10,7 +10,7 @@ import os
 import numpy as np
 import scipy.io as sio
 
-path = 'D:/DLexp/SuperResolution_Rst/exp3/'
+path = 'D:/DLexp/SuperResolution_Rst/exp6/'
 ori_path = path + 'npys/'
 dst_path = path + 'mats/'
 ref_path = 'E:/Cerebral Infarction/SuperResolution/perfusion_mat/'
@@ -20,8 +20,8 @@ npys = os.listdir(ori_path)
 npy_num = len(npys)
 
 for i in range(0, npy_num, 2):
+    p = ori_path + npys[i+1]
     pred = np.squeeze(np.load(ori_path + npys[i+1]))
-    pred = np.transpose(pred, [2,0,1])
     pred = pred*Norm
     splits = npys[i+1].split('_')
     patient = splits[0]

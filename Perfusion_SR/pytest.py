@@ -5,6 +5,8 @@
 # @Author  : ***
 
 import numpy as np
+import matplotlib.pyplot as plt
+import scipy.io as sio
 from tensorflow.python.tools.inspect_checkpoint import  print_tensors_in_checkpoint_file
 
 from tensorflow.python.platform import gfile
@@ -57,9 +59,28 @@ from tensorflow.python.framework import graph_util
 #
 #
 #
-print_tensors_in_checkpoint_file('D://resnet_v2_50/resnet_v2_50.ckpt', tensor_name= None, all_tensors= False, all_tensor_names= True)
-# # a = np.load('D:/DLexp/SuperResolution_Rst/exp1/npys/zhaokuaile_37.25-pred.npy')
+# print_tensors_in_checkpoint_file('D://resnet_v2_50/resnet_v2_50.ckpt', tensor_name= None, all_tensors= False, all_tensor_names= True)
 #
 # if __name__ == '__main__':
 #     #save_mode_pb(path)
 #     restore_mode_pb(path)
+
+# a = np.squeeze(np.load('D:/DLexp/SuperResolution_Rst/exp4/npys/zhaokuaile_37.25-pred.npy')) * 200
+# b = np.squeeze(np.load('D:/DLexp/SuperResolution_Rst/exp2/npys/zhaokuaile_37.25-mask.npy')) * 200
+# c = np.squeeze(a - b)
+# min = np.min(c)
+# max = np.max(c)
+# line1 = a[:, 161, 281] - 1024
+# # plt.plot(line1)
+# line2 = b[:, 161, 281] -1024
+# plt.plot(line2)
+#
+# mat = sio.loadmat('E:/Cerebral Infarction/SuperResolution/SR_15_30/zhaokuaile/37.25.mat')
+# matt = mat['Mat']
+# line3 = matt[:, 161, 281] - 1024
+# plt.plot(line3)
+# plt.show()
+
+a = np.load('E:/Cerebral Infarction/SuperResolution/exp_data4/test/label/zhoujiazhi_54.75.npy')
+
+print('ok')
