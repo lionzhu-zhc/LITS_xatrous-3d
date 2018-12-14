@@ -14,18 +14,18 @@ import os
 import numpy as np
 slim = tf.contrib.slim
 
-path = 'E:/Cerebral Infarction/SuperResolution/exp_data3/'
+path = 'E:/Cerebral Infarction/SuperResolution/exp_data/'
 # trainPath = path + '1/'
 trainPath = path + 'train_noaug/'
 testPath = path + 'test/'
 #change dir here ..............................................................
-resultPath = 'D:/DLexp/SuperResolution_Rst/exp6/'
+resultPath = 'D:/DLexp/SuperResolution_Rst/exp13/'
 pretrain_path = 'D://resnet_v2_50/resnet_v2_50.ckpt'
 
 IMAGE_CHANNEL = 30
 
 LEARNING_RATE = 1e-3
-EPOCH = 10
+EPOCH = 6
 ITER_PER_EPOCH = 2000
 DECAY_INTERVAL = ITER_PER_EPOCH * EPOCH // 10
 MAX_ITERATION = ITER_PER_EPOCH * EPOCH
@@ -45,16 +45,20 @@ def srcnn_run():
         annotation = tf.placeholder(tf.float32, shape=[None, None, None, None, 1], name='annotation')  # shape BDHWC
     bn_flag = tf.placeholder(tf.bool)
     keep_prob = tf.placeholder(tf.float32)
+    residual = tf.subtract(image, annotation)
 
-    #pred = SRCNN.build_srcnn(tensor_in= image, BN_FLAG= bn_flag, KEEPPROB= keep_prob, IMGCHANNEL= IMAGE_CHANNEL)
+    # pred = SRCNN.build_srcnn(tensor_in= image, BN_FLAG= bn_flag, KEEPPROB= keep_prob, IMGCHANNEL= IMAGE_CHANNEL)
     # pred = ResSR.ResSR(inputs= image, is_training= bn_flag, IMGCHANNEL= IMAGE_CHANNEL)
-    pred = sparse_CNN.build_sparseCNN(tensor_in= image, BN_FLAG= bn_flag,  KEEPPROB= keep_prob, IMGCHANNEL= IMAGE_CHANNEL)
+    pred_res = sparse_CNN.build_sparseCNN(tensor_in= image, BN_FLAG= bn_flag,  KEEPPROB= keep_prob, IMGCHANNEL= IMAGE_CHANNEL)
+    target = tf.subtract(image, pred_res)
 
 
     with tf.variable_scope('loss'):
-        # loss_reduce = LossPy.EuclideanLoss(pred, annotation)
-        target = tf.add(pred, image)
-        loss_reduce = tf.losses.mean_squared_error(annotation, target)
+        # loss_reduce = tf.losses.mean_squared_error(annotation, target)
+        dif = tf.subtract(residual, pred_res)
+        square = tf.square(dif)
+        loss_reduce = tf.sqrt(tf.reduce_mean(square))
+
         tf.summary.scalar('loss', loss_reduce)
 
     with tf.variable_scope('trainOP'):
@@ -122,7 +126,7 @@ def srcnn_run():
             print(itr, 'loss:', train_loss_print)
             train_writer.add_summary(summary_str, itr)
 
-            valid_feed = {LRate: LEARNING_RATE, image: valid_vol_batch, annotation: valid_seg_batch, bn_flag: True, keep_prob: 1}
+            valid_feed = {LRate: LEARNING_RATE, image: valid_vol_batch, annotation: valid_seg_batch, bn_flag: False, keep_prob: 1}
             valid_loss_print, summary_str = sess.run([loss_reduce, merge_op], feed_dict=valid_feed)
             valid_writer.add_summary(summary_str, itr)
             print('valid_loss:', valid_loss_print)
@@ -142,7 +146,7 @@ def srcnn_run():
                     test_feed = {image: vol_batch, annotation: label_batch, bn_flag: False, keep_prob: 1}
                     test_pred = sess.run(target, feed_dict=test_feed)
                     label_tosave = np.squeeze(label_batch, axis=4)
-                    pred_tosave = np.squeeze(test_pred, axis=4)
+                    pred_tosave = np.squeeze(test_pred, axis=4)    # shape [1,30, 512, 512]
                     name_pre = t_dir[:-4]
                     print("test_itr:", name_pre)
                     utils_fun.SaveNpys(resultPath, name_pre, label_tosave, pred_tosave)

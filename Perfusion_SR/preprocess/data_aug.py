@@ -11,9 +11,10 @@ import numpy as np
 import scipy.io as sio
 
 ori_path = 'E:/Cerebral Infarction/SuperResolution/SR_15_30/'
-label_path = 'E:/Cerebral Infarction/SuperResolution/Perfusion_mat/'
-# 30x512x512
-dst_path = 'E:/Cerebral Infarction/SuperResolution/exp_data3/'
+label_path = 'E:/Cerebral Infarction/SuperResolution/Perf_mat/'
+# nx512x512
+#change dir here-------------------------------------------------------
+dst_path = 'E:/Cerebral Infarction/SuperResolution/exp_data2/'
 
 ImgWidth = 512
 ImgHeight = 512
@@ -35,7 +36,7 @@ def zscore(x):
     return x_norm
 
 def Norm(x):
-    return (x / 100)
+    return (x / 1000)
 
 def PrepareTraining(AUG):
     if AUG:
@@ -96,7 +97,7 @@ def PrepareTraining(AUG):
                             n * n_patch + m) + '.npy', vol_patch.astype(np.float32))
                         np.save(dst_path + 'train/' + 'label/' + patients[i] + '_mir' + '_' + name_pre + '_' + str(
                             n * n_patch + m) + '.npy', label_patch.astype(np.float32))
-
+    #-------------------------------------------------------------------------------------------------------------------------
     else:
         patients = os.listdir(ori_path)
         for i in range(18):
@@ -104,18 +105,19 @@ def PrepareTraining(AUG):
             for j in range(4):
                 name_pre = mats[j][:-4]
                 ori_mat = sio.loadmat(os.path.join(ori_path, patients[i], mats[j]))
-                vol_norm = ori_mat['Mat']    # shape: [Depth, Width, Height]
-                # vol_norm = ZeroOneNorm(mat)
+                vol_norm_t = ori_mat['Mat']    # shape: [Depth, Width, Height]
+                vol_norm = Norm(vol_norm_t)
                 ori_mat = sio.loadmat(os.path.join(label_path, patients[i], mats[j]))
-                label = ori_mat['Mat']
+                label_t = ori_mat['Mat']
+                label = Norm(label_t)
 
                 for n in range(n_patch):
                     for m in range(n_patch):
                         vol_patch = vol_norm[:, m * Step: (m * Step + PatchSize),
-                                    n * Step: (n * Step + PatchSize)]  # 30x32x32
+                                    n * Step: (n * Step + PatchSize)]  # Nx32x32
                         label_patch = label[:, m * Step: (m * Step + PatchSize), n * Step: (n * Step + PatchSize)]
-                        vol_patch = Norm(vol_patch)
-                        label_patch = Norm(label_patch)
+                        shap = vol_patch.shape
+                        print(shap)
 
                         #label_patch = label_patch[:, 6:26, 6:26]  # crop 30x20x20
 
@@ -133,14 +135,15 @@ def PrepareTest():
         for j in range(4):
             name_pre = mats[j][:-4]
             ori_mat = sio.loadmat(os.path.join(ori_path, patients[i], mats[j]))
-            mat = ori_mat['Mat']
-            vol_norm = Norm(mat)
+            vol_norm_t = ori_mat['Mat']
+            vol_norm = Norm(vol_norm_t)
             shap = vol_norm.shape
+            print(shap)
             # vol_dst = np.zeros((shap[0], shap[1] + 12, shap[2] + 12))
             # vol_dst[:, 6:518, 6:518] = vol_norm
             ori_mat = sio.loadmat(os.path.join(label_path, patients[i], mats[j]))
-            label = ori_mat['Mat']
-            label = Norm(label)
+            label_t = ori_mat['Mat']
+            label = Norm(label_t)
 
             np.save(
                 dst_path + 'test/' + 'vol/' + patients[i] + '_' + name_pre + '.npy',

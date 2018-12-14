@@ -10,11 +10,11 @@ import os
 import numpy as np
 import scipy.io as sio
 
-path = 'D:/DLexp/SuperResolution_Rst/exp6/'
+path = 'D:/DLexp/SuperResolution_Rst/exp12/'
 ori_path = path + 'npys/'
 dst_path = path + 'mats/'
-ref_path = 'E:/Cerebral Infarction/SuperResolution/perfusion_mat/'
-Norm = 100
+ref_path = 'E:/Cerebral Infarction/Perf_mat_nofilter/'
+Norm = 1000
 
 npys = os.listdir(ori_path)
 npy_num = len(npys)

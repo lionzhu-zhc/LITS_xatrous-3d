@@ -7,7 +7,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io as sio
-from tensorflow.python.tools.inspect_checkpoint import  print_tensors_in_checkpoint_file
+from tensorflow.python.tools.inspect_checkpoint import print_tensors_in_checkpoint_file
 
 from tensorflow.python.platform import gfile
 import tensorflow as tf
@@ -81,6 +81,10 @@ from tensorflow.python.framework import graph_util
 # plt.plot(line3)
 # plt.show()
 
-a = np.load('E:/Cerebral Infarction/SuperResolution/exp_data4/test/label/zhoujiazhi_54.75.npy')
-
+a = np.load('E:/Cerebral Infarction/SuperResolution/exp_data/test/label/yaoxianpu_64.npy')
+b = a[10,:,:]
+b =b*1000
+b = (b-1024).astype(np.int32)
+plt.imshow(b,  cmap ='gray')
+plt.show()
 print('ok')
