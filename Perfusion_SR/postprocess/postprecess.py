@@ -10,10 +10,10 @@ import os
 import numpy as np
 import scipy.io as sio
 
-path = 'D:/DLexp/SuperResolution_Rst/exp12/'
+path = 'D:/DLexp/SuperResolution_Rst/exp16/'
 ori_path = path + 'npys/'
 dst_path = path + 'mats/'
-ref_path = 'E:/Cerebral Infarction/Perf_mat_nofilter/'
+ref_path = 'E:/Cerebral Infarction/SuperResolution/Perf_mat/'
 Norm = 1000
 
 npys = os.listdir(ori_path)
@@ -21,6 +21,8 @@ npy_num = len(npys)
 
 for i in range(0, npy_num, 2):
     p = ori_path + npys[i+1]
+    label = np.squeeze(np.load(ori_path + npys[i]))
+    label = label*Norm
     pred = np.squeeze(np.load(ori_path + npys[i+1]))
     pred = pred*Norm
     splits = npys[i+1].split('_')
@@ -40,6 +42,8 @@ for i in range(0, npy_num, 2):
 
     sio.savemat(dst_path+patient+'/' +loc + '.mat',
                 {'Mat':pred, 'AIFx': AIFx, 'AIFy':AIFy, 'VOFx':VOFx, 'VOFy':VOFy, 'PRE':PRE, 'POST':POST})
+    # sio.savemat(dst_path + patient + '/' + loc + '_mask.mat',
+    #             {'Mat': label, 'AIFx': AIFx, 'AIFy': AIFy, 'VOFx': VOFx, 'VOFy': VOFy, 'PRE': PRE, 'POST': POST})
 
 print('ok')
 

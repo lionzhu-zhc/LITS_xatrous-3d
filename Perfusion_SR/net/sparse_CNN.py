@@ -11,8 +11,8 @@ import tensorflow as tf
 def build_sparseCNN(tensor_in, BN_FLAG, KEEPPROB, IMGCHANNEL):
     res = tensor_in
     shap= tf.shape(tensor_in)
-    for i in range(10):
-        if i != 9:
+    for i in range(5):
+        if i != 4:
             out_channel = 32
             res = tf.layers.conv3d(res, filters= out_channel, kernel_size= 3, strides= [1,1,1], padding= 'same', activation= tf.nn.relu,
                                    kernel_initializer= tf.initializers.truncated_normal(), name= 'Layer_{}'.format(i))

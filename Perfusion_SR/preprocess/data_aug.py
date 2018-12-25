@@ -10,11 +10,11 @@ import os
 import numpy as np
 import scipy.io as sio
 
-ori_path = 'E:/Cerebral Infarction/SuperResolution/SR_15_30/'
+ori_path = 'E:/Cerebral Infarction/SuperResolution/SR_30/'
 label_path = 'E:/Cerebral Infarction/SuperResolution/Perf_mat/'
 # nx512x512
 #change dir here-------------------------------------------------------
-dst_path = 'E:/Cerebral Infarction/SuperResolution/exp_data2/'
+dst_path = 'E:/Cerebral Infarction/SuperResolution/exp_data3/'
 
 ImgWidth = 512
 ImgHeight = 512

@@ -81,10 +81,33 @@ from tensorflow.python.framework import graph_util
 # plt.plot(line3)
 # plt.show()
 
-a = np.load('E:/Cerebral Infarction/SuperResolution/exp_data/test/label/yaoxianpu_64.npy')
-b = a[10,:,:]
-b =b*1000
-b = (b-1024).astype(np.int32)
-plt.imshow(b,  cmap ='gray')
-plt.show()
+# a = np.squeeze(np.load('E:\Cerebral Infarction\SuperResolution\exp_data3/test/label/zhangyongjun_44.75.npy'))
+# b = a[10,:,:]
+# b =b*1000
+# b = (b-1024).astype(np.int16)
+# plt.imshow(b,  cmap ='gray')
+# plt.show()
+# print('ok')
+
+patient = 'yaoxiaofa/41.mat'
+ori_path = 'D:\DLexp\SuperResolution_Rst\exp14\mats/' + patient
+sr_path = 'E:\Cerebral Infarction\SuperResolution\SR_15_30/' +  patient
+ref_path = 'D:\DLexp\SuperResolution_Rst\exp14\mats_ref/' + patient
+
+mat = sio.loadmat(ori_path)
+target = mat['Mat'] /1000
+
+mat = sio.loadmat(sr_path)
+img = mat['Mat'] /1000
+
+mat = sio.loadmat(ref_path)
+annot = mat['Mat'] / 1000
+
+residual = img - annot
+pred_res = target - img
+
+dif = residual - pred_res
+square = np.square(dif)
+loss = np.sqrt(np.mean(square))
+
 print('ok')

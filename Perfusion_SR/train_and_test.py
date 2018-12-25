@@ -14,18 +14,18 @@ import os
 import numpy as np
 slim = tf.contrib.slim
 
-path = 'E:/Cerebral Infarction/SuperResolution/exp_data/'
+path = 'E:/Cerebral Infarction/SuperResolution/exp_data2/'
 # trainPath = path + '1/'
 trainPath = path + 'train_noaug/'
 testPath = path + 'test/'
 #change dir here ..............................................................
-resultPath = 'D:/DLexp/SuperResolution_Rst/exp13/'
+resultPath = 'D:/DLexp/SuperResolution_Rst/exp16/'
 pretrain_path = 'D://resnet_v2_50/resnet_v2_50.ckpt'
 
 IMAGE_CHANNEL = 30
 
 LEARNING_RATE = 1e-3
-EPOCH = 6
+EPOCH = 4
 ITER_PER_EPOCH = 2000
 DECAY_INTERVAL = ITER_PER_EPOCH * EPOCH // 10
 MAX_ITERATION = ITER_PER_EPOCH * EPOCH
@@ -57,7 +57,7 @@ def srcnn_run():
         # loss_reduce = tf.losses.mean_squared_error(annotation, target)
         dif = tf.subtract(residual, pred_res)
         square = tf.square(dif)
-        loss_reduce = tf.sqrt(tf.reduce_mean(square))
+        loss_reduce = tf.reduce_mean(square)
 
         tf.summary.scalar('loss', loss_reduce)
 
