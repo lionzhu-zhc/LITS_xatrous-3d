@@ -1,6 +1,5 @@
 '''
 20180404 LionZhu
---------------psp_atrous_net-------------------
 the file for net structure
 the ori net changed from pspnet
 '''
@@ -304,19 +303,28 @@ def build_LITS_Xatrous_3d(tensor_in, BN_FLAG, BATCHSIZE, IMAGE_DEPTH, IMAGE_HEIG
     with tf.variable_scope('s3_u6_conv'):
         s3u6_conv = conv_layer(kernel_size=1, in_put=s3u5_deconv, in_channel=64,
                                     out_channel=CLASSNUM, name='Conv')
-    # shape [BS, depth, height, width, CLASSNUM]
+    # shape [_, depth, height, width, channel]
 
     with tf.variable_scope('SoftMax'):
-        pred_annot = tf.argmax(s3u6_conv, axis=4, name='prediction')
+        pred_annot = tf.argmax(s3u6_conv, dimension=4, name='prediction')
 
     return tf.expand_dims(pred_annot, dim=4), s3u6_conv
 
 def conv_layer(kernel_size, in_put, in_channel, out_channel, c_stride = 1, c_rate = 1, name = None):
     with tf.variable_scope(name):
         conv_weights, conv_bias = get_var(kernel_size, in_channel, out_channel, name)
-        conv = tf.nn.conv3d(in_put, conv_weights, strides= [1, c_stride, c_stride, c_stride, 1], padding= 'SAME', dilations= [1, 1, c_rate, c_rate, 1])
+        conv = tf.nn.conv3d(in_put, conv_weights, strides= [1, c_stride, c_stride, c_stride, 1], padding= 'SAME', dilations= [1, 1, 1, 1, 1])
         conv_addbias = tf.nn.bias_add(conv, conv_bias)
         return conv_addbias
+
+
+def get_var(kernel_size, in_channel, out_channel, name = None):
+    weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, in_channel, out_channel],
+                              initializer= tf.contrib.layers.xavier_initializer())
+    bias = tf.get_variable('b', [out_channel], initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
+
+    return weights, bias
+
 
 def max_pool3d(in_tensor, ksize, stride):
     maxpool_res = tf.nn.max_pool3d(in_tensor, ksize=[1, ksize, ksize, ksize, 1],
@@ -330,13 +338,6 @@ def conv3d_transpose_layer( kernel_size, in_put, out_shape, in_channel, out_chan
         deconv_addbias = tf.nn.bias_add(deconv, deconv_bias)
         return  deconv_addbias
 
-# xavier initializer---------------------------------------------------------------------------------------------------
-def get_var(kernel_size, in_channel, out_channel, name = None):
-    weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, in_channel, out_channel],
-                              initializer= tf.contrib.layers.xavier_initializer())
-    bias = tf.get_variable('b', [out_channel], initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
-
-    return weights, bias
 
 def get_var_transpose(kernel_size, in_channel, out_channel, name = None):
     weights = tf.get_variable('w', shape=[kernel_size, kernel_size, kernel_size, out_channel, in_channel],
@@ -345,21 +346,3 @@ def get_var_transpose(kernel_size, in_channel, out_channel, name = None):
     bias = tf.get_variable('b', [out_channel],
                            initializer=tf.constant_initializer(value=0.0, dtype=tf.float32))
     return weights, bias
-
-
-# normal init-----------------------------------------------------------------------------------------------------------
-
-# def get_var(kernel_size, in_channel, out_channel, name = None):
-#     init_value = tf.truncated_normal([kernel_size, kernel_size, kernel_size, in_channel, out_channel], 0.0, 0.01)
-#     weights = tf.Variable(init_value, name= 'w')
-#     init_value = tf.truncated_normal([out_channel], 0.0, 0.01)
-#     bias = tf.Variable(init_value, name= 'b')
-#     return  weights, bias
-#
-# def get_var_transpose(kernel_size, in_channel, out_channel, name = None):
-#     init_value = tf.truncated_normal([kernel_size, kernel_size, kernel_size, out_channel, in_channel], 0.0, 0.01)
-#     weights = tf.Variable(init_value, name= 'w')
-#     init_value = tf.truncated_normal([out_channel], 0.0, 0.01)
-#     bias = tf.Variable(init_value, name= 'b')
-#     return  weights, bias
-
